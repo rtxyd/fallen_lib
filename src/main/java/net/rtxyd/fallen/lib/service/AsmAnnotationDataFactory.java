@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-class AsmAnnotationDataFactory implements AnnotationDataFactory {
+public class AsmAnnotationDataFactory implements AnnotationDataFactory {
     private final List<AnnotationNode> annotationNodes;
 
     public AsmAnnotationDataFactory(List<AnnotationNode> annotationNodes) {

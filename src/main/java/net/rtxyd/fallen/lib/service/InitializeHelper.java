@@ -1,7 +1,9 @@
 package net.rtxyd.fallen.lib.service;
 
 import cpw.mods.modlauncher.api.IEnvironment;
+import net.minecraftforge.forgespi.Environment;
 import net.rtxyd.fallen.lib.engine.*;
+import net.rtxyd.fallen.lib.extra.cmerge.SimpleClassMergeEngine;
 import net.rtxyd.fallen.lib.type.engine.ResourceScanner;
 
 import java.io.File;
@@ -16,15 +18,17 @@ public class InitializeHelper {
 
     private final IEnvironment environment;
     private final ResourceScanEngine engine;
+    private final SimpleClassMergeEngine mergeEngine;
     private final List<ResourceScanner> scanners = new ArrayList<>();
     private ScanContext ctx;
 
     private Path gamePath;
-    private File modsDir;
+    private static File modsDir;
 
     public InitializeHelper(IEnvironment environment) {
         this.environment = environment;
         this.engine = new ResourceScanEngine();
+        this.mergeEngine = new SimpleClassMergeEngine();
 
         checkEnvironment();
         resolveGamePath();
@@ -45,10 +49,18 @@ public class InitializeHelper {
     }
 
     private void resolveModsDir() {
-        modsDir = gamePath.resolve("mods").toFile();
+        File modsDirA =  gamePath.resolve("mods").toFile();
+        if (!modsDirA.exists() || !modsDirA.isDirectory()) {
+            throw new RuntimeException("Minecraft ModsDir doesn't exist!");
+        } else {
+            modsDir = modsDirA;
+        }
     }
 
-    File getModsDir() {
+    static File getModsDir() {
+        if (modsDir == null) {
+            throw new RuntimeException("Minecraft ModsDir is null!");
+        }
         return modsDir;
     }
 
@@ -77,6 +89,11 @@ public class InitializeHelper {
         FallenBootstrap.LOGGER.info("Prepare to scan resources.");
         ctx = engine.scan(scanners, true);
         FallenBootstrap.LOGGER.info("End scanning.");
+    }
+
+
+    void registerEmbedded(FallenEmbeddedRegistry embeddedRegistry) {
+        // nothing to do now
     }
 
     void registerPatches(FallenPatchRegistry registry) {

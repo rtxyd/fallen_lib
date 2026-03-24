@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-final class AsmAnnotationData implements AnnotationData {
+public final class AsmAnnotationData implements AnnotationData {
 
     private final AnnotationNode node;
     private Map<String, Object> cache;

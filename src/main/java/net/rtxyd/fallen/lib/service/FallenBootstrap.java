@@ -3,6 +3,7 @@ package net.rtxyd.fallen.lib.service;
 import cpw.mods.modlauncher.api.IEnvironment;
 import cpw.mods.modlauncher.api.ITransformationService;
 import cpw.mods.modlauncher.api.ITransformer;
+import net.rtxyd.fallen.lib.extra.cmerge.FallenClassMergeTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,7 @@ import java.util.Set;
 
 public final class FallenBootstrap implements ITransformationService {
     boolean initialized;
-    private final FallenPatchRegistry registry = new FallenPatchRegistry();
+    private final FallenRegistryBox box = new FallenRegistryBox();
     static final Logger LOGGER = LoggerFactory.getLogger("fallen.bootstrap");
     @Override
     public String name() {
@@ -36,7 +37,8 @@ public final class FallenBootstrap implements ITransformationService {
             return;
         }
 
-        helper.registerPatches(registry);
+        helper.registerPatches(box.patchRegistry);
+        helper.registerEmbedded(box.embeddedRegistry);
     }
 
     @Override
@@ -46,6 +48,7 @@ public final class FallenBootstrap implements ITransformationService {
     @Override
     public List<ITransformer> transformers() {
         LOGGER.info("Creating delegating transformer.");
-        return List.of(new FallenDelegatingTransformer(registry, new DefaultPatchCtorContext(registry.classBytes.keySet())));
+        return List.of(new FallenDelegatingTransformer(box.patchRegistry, new DefaultPatchCtorContext(box.patchRegistry.classBytes.keySet())),
+                new FallenClassMergeTransformer(box.embeddedRegistry.engine));
     }
 }

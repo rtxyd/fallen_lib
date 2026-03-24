@@ -1,6 +1,6 @@
 package net.rtxyd.fallen.lib.service;
 
-interface AnnotationData {
+public interface AnnotationData {
     String name();
     Object get(String element);
 
