@@ -244,8 +244,12 @@ tasks.withType(Copy).configureEach {
 tasks.register("generateBuildInfo") {
     def outputDir = layout.buildDirectory.dir("generated/sources/buildinfo").get().asFile
     outputs.dir(outputDir)
-
+    outputs.upToDateWhen { false }
     doLast {
+        // force to run everytime
+//        if (outputDir.exists()) {
+//            outputDir.deleteDir()
+//        }
         def pkg = "net.rtxyd.fallen.lib.config"
         def dir = new File(outputDir, pkg.replace('.', '/'))
         dir.mkdirs()

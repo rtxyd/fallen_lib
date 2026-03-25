@@ -27,7 +27,14 @@ public final class FallenBootstrap implements ITransformationService {
             throw new IllegalStateException("Already initialized");
         }
         String target = environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get()).orElse("");
-        isDevEnvironment = target.endsWith("dev") || !System.getProperties().containsKey("production");
+        boolean isDevTarget =
+                target.endsWith("dev") ||
+                target.equals("mcp") ||
+                target.equals("srg");
+
+        boolean isProduction =
+                System.getProperties().containsKey("production");
+        isDevEnvironment = isDevTarget && !isProduction;
         initialized = true;
 
         InitializeHelper helper = new InitializeHelper(environment);
