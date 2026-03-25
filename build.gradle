@@ -163,7 +163,7 @@ repositories {
 }
 configurations {
     runtimeImplementation       .extendsFrom implementation
-    runtimeAnnotationProcessor  .extendsFrom implementation
+    runtimeAnnotationProcessor  .extendsFrom annotationProcessor
 }
 
 dependencies {
