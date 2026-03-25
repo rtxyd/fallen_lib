@@ -13,6 +13,7 @@ import java.util.Set;
 
 public final class FallenBootstrap implements ITransformationService {
     boolean initialized;
+    static boolean isDevEnvironment;
     private final FallenRegistryBox box = new FallenRegistryBox();
     static final Logger LOGGER = LoggerFactory.getLogger("fallen.bootstrap");
     @Override
@@ -25,6 +26,8 @@ public final class FallenBootstrap implements ITransformationService {
         if (initialized) {
             throw new IllegalStateException("Already initialized");
         }
+        String target = environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get()).orElse("");
+        isDevEnvironment = target.endsWith("dev") || !System.getProperties().containsKey("production");
         initialized = true;
 
         InitializeHelper helper = new InitializeHelper(environment);

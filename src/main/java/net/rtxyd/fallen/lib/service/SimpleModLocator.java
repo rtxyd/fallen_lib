@@ -12,6 +12,7 @@ import net.rtxyd.fallen.lib.config.BuildInfo;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -34,7 +35,9 @@ public class SimpleModLocator extends AbstractJarFileModProvider implements IMod
     // @Override
     public Stream<Path> scanCandidates() {
         var paths = Stream.<Path>builder();
-        return paths.add(getPath()).build();
+        Path path = getPath();
+        if (path == null) return paths.build();
+        return paths.add(path).build();
     }
 
     public Path getPath() {
@@ -49,14 +52,22 @@ public class SimpleModLocator extends AbstractJarFileModProvider implements IMod
                 + "-"
                 + classifier
                 + ".jar";
-        try {
-            URL url = this.getClass().getClassLoader().getResource(fullPath);
-            if (url == null) {
-                throw new RuntimeException("Can't find runtime jar in fallen lib!");
+        URL url = this.getClass().getClassLoader().getResource(fullPath);
+        if (url == null) {
+            if (FallenBootstrap.isDevEnvironment) {
+                LOGGER.warn("Run fallen core lib in dev environment without runtime lib.");
+                return null;
+            } else {
+                url = this.getClass().getClassLoader().getResource("net/rtxyd/fallen/lib/runtime/forgemod/FallenLib.class");
+                if (url == null) {
+                    throw new RuntimeException("Can't find fallen runtime lib!");
+                }
             }
+        }
+        try {
             return Path.of(url.toURI());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(String.format("Failed transfer url %s to URI!", url));
         }
     }
 
@@ -73,6 +84,7 @@ public class SimpleModLocator extends AbstractJarFileModProvider implements IMod
     // forge way to adapt the union path.
     public List<ModFileOrException> scanMods() {
         Path pathInModFile = getPath();
+        if (pathInModFile == null) return List.of();
         try {
             final URI filePathUri = new URI("jij:" + (pathInModFile.toAbsolutePath().toUri().getRawSchemeSpecificPart())).normalize();
             final Map<String, ?> outerFsArgs = ImmutableMap.of("packagePath", pathInModFile);

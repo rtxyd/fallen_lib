@@ -1,10 +1,13 @@
 package net.rtxyd.fallen.lib.service;
 
 import cpw.mods.modlauncher.api.IEnvironment;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.forgespi.Environment;
 import net.rtxyd.fallen.lib.engine.*;
 import net.rtxyd.fallen.lib.extra.cmerge.SimpleClassMergeEngine;
 import net.rtxyd.fallen.lib.type.engine.ResourceScanner;
+import net.rtxyd.fallen.lib.util.MiscUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -76,7 +79,7 @@ public class InitializeHelper {
             }
         }
 
-        if (isIDEATestEnvironment(environment)) {
+        if (FallenBootstrap.isDevEnvironment) {
             for (String path : System.getProperty("java.class.path").split(File.pathSeparator)) {
                 File f = new File(path);
                 if (f.isDirectory()) scanners.add(new DirectoryScanner(f));
@@ -137,12 +140,5 @@ public class InitializeHelper {
 
     ResourceScanEngine getEngine() {
         return engine;
-    }
-
-    private boolean isIDEATestEnvironment(IEnvironment environment) {
-        String cp = System.getProperty("java.class.path");
-//        String args = System.getProperty("jvmArgs");
-        String target = environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get()).orElse("");
-        return (target.equals("forgeclientuserdev") || target.equals("forgeserveruserdev")) && cp.contains("build/classes/java".replace("/", File.separator));
     }
 }
