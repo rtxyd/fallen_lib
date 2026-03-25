@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "net.rtxyd.fallen.lib.runtime.forgemod.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "fallen_lib.refmap.json",
+  "mixins": [
+    "GemMixin"
+  ],
+  "client": [
+  ],
+  "minVersion": "0.8"
+}
