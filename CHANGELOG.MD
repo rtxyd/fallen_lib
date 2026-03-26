@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3
+--
+### 1.3.1
+- Distribute runtime environment
+- Add experimental build task (for future use)
+- Fix `BuildInfo`
+
+### 1.3.0
+- Experimental simple class merge engine (very low quality)
+- Implement fallen lib forge runtime mod
+- Port extra_gem_bonus from Fallen Gems & Affixes
+- Implement fallen lib forge mod lifecycle hook
+
 ## 1.2
 ---
 ### 1.2.0
