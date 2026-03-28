@@ -22,6 +22,9 @@ public class FallenConfig {
     @SerializedName("fallen_patches")
     List<String> patches;
 
+    @SerializedName("mixin_connector")
+    String mixinConnector;
+
     public boolean isRequired() {
         return required;
     }
@@ -30,6 +33,9 @@ public class FallenConfig {
     }
     public String getPackage() {
         return pkg;
+    }
+    public String getMixinConnector() {
+        return mixinConnector;
     }
     public List<String> getPatches() {
         return Collections.unmodifiableList(patches);

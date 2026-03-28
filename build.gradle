@@ -221,6 +221,14 @@ mixin {
 //    config "${mod_id}.mixins.json"
 }
 
+// to disable mixin method check
+//tasks.withType(JavaCompile).configureEach {
+//    options.compilerArgs += [
+//            "-AoutRefMapFile=${mod_id}.refmap.json",
+//            "-Amixin.env.disableTargetValidator=true"
+//    ]
+//}
+
 tasks.withType(ProcessResources).configureEach {
     var replaceProperties = [
             minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,

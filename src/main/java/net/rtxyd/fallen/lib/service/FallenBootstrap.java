@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 public final class FallenBootstrap implements ITransformationService {
-    boolean initialized;
+    static boolean initialized;
     static boolean isDevEnvironment;
     private final FallenRegistryBox box = new FallenRegistryBox();
     static final Logger LOGGER = LoggerFactory.getLogger("fallen.bootstrap");
@@ -35,7 +35,6 @@ public final class FallenBootstrap implements ITransformationService {
         boolean isProduction =
                 System.getProperties().containsKey("production");
         isDevEnvironment = isDevTarget && !isProduction;
-        initialized = true;
 
         InitializeHelper helper = new InitializeHelper(environment);
         helper.collectScanners();
@@ -48,7 +47,9 @@ public final class FallenBootstrap implements ITransformationService {
         }
 
         helper.registerPatches(box.patchRegistry);
+        helper.registerMixinConnectors();
         helper.registerEmbedded(box.embeddedRegistry);
+        initialized = true;
     }
 
     @Override
@@ -59,6 +60,14 @@ public final class FallenBootstrap implements ITransformationService {
     public List<ITransformer> transformers() {
         LOGGER.info("Creating delegating transformer.");
         return List.of(new FallenDelegatingTransformer(box.patchRegistry, new DefaultPatchCtorContext(box.patchRegistry.classBytes.keySet())),
-                new FallenClassMergeTransformer(box.embeddedRegistry.engine));
+                new FallenClassMergeTransformer(box.embeddedRegistry.classMergeEngine));
+    }
+
+    public static boolean isInitialized() {
+        return initialized;
+    }
+
+    public static boolean isDevEnvironment() {
+        return isDevEnvironment;
     }
 }

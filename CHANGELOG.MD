@@ -1,7 +1,10 @@
 # Changelog
 
 ## 1.3
---
+---
+### 1.3.2
+- Implement a simple delegating mixin connector registry (experimental)
+
 ### 1.3.1
 - Distribute runtime environment
 - Add experimental build task (for future use)

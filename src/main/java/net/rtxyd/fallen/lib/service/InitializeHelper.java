@@ -4,8 +4,10 @@ import cpw.mods.modlauncher.api.IEnvironment;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.forgespi.Environment;
+import net.rtxyd.fallen.lib.config.FallenConfig;
 import net.rtxyd.fallen.lib.engine.*;
 import net.rtxyd.fallen.lib.extra.cmerge.SimpleClassMergeEngine;
+import net.rtxyd.fallen.lib.extra.mixin.FallenMixinConnectorRegistry;
 import net.rtxyd.fallen.lib.type.engine.ResourceScanner;
 import net.rtxyd.fallen.lib.util.MiscUtil;
 
@@ -97,6 +99,12 @@ public class InitializeHelper {
 
     void registerEmbedded(FallenEmbeddedRegistry embeddedRegistry) {
         // nothing to do now
+    }
+
+    void registerMixinConnectors() {
+        for (FallenConfig config : ctx.configContainers().keySet()) {
+            FallenMixinConnectorRegistry.register(config.getMixinConnector());
+        }
     }
 
     void registerPatches(FallenPatchRegistry registry) {
