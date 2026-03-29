@@ -14,11 +14,7 @@ public class SimpleMixinConnector implements IMixinConnector {
         if (isApothExist) {
             Mixins.addConfiguration(FallenLib.MODID + ".mixins.json");
         }
-        try {
-            connectRegistry();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        connectRegistry();
     }
 
     private void connectRegistry() {
@@ -30,11 +26,16 @@ public class SimpleMixinConnector implements IMixinConnector {
                 connectors.add((IMixinConnector) clz.getDeclaredConstructor().newInstance());
             } catch (Exception e) {
                 e.printStackTrace();
-                FallenLib.LOGGER.error("Can't load class {}", cl);
+                FallenLib.LOGGER.error("Can't load mixin connector class {}", cl);
             }
         });
         for (IMixinConnector connector : connectors) {
-            connector.connect();
+            try {
+                connector.connect();
+            } catch (Exception e) {
+                e.printStackTrace();
+                FallenLib.LOGGER.error("Mixin connector [{}] failed to connect.", connector.getClass());
+            }
         }
     }
 }

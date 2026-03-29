@@ -103,6 +103,7 @@ public class InitializeHelper {
 
     void registerMixinConnectors() {
         for (FallenConfig config : ctx.configContainers().keySet()) {
+            if (config.getMixinConnector().isEmpty()) continue;
             FallenMixinConnectorRegistry.register(config.getMixinConnector());
         }
     }

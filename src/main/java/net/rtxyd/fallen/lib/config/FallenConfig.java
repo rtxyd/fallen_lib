@@ -11,19 +11,19 @@ public class FallenConfig {
     public static final String VERSION = BuildInfo.VERSION;
 
     @SerializedName("required")
-    boolean required;
+    boolean required = false;
 
     @SerializedName("min_version")
-    String minVersion;
+    String minVersion = "";
 
     @SerializedName("package")
-    String pkg;
+    String pkg = "";
 
     @SerializedName("fallen_patches")
-    List<String> patches;
+    List<String> patches = List.of();
 
     @SerializedName("mixin_connector")
-    String mixinConnector;
+    String mixinConnector = "";
 
     public boolean isRequired() {
         return required;
@@ -44,6 +44,7 @@ public class FallenConfig {
     public boolean versionCheck() {
         String[] vParts = VERSION.split("\\.");
         String[] mParts = minVersion.split("\\.");
+        if (mParts.length < 1) return false;
 
         int length = Math.max(vParts.length, mParts.length);
         for (int i = 0; i < length; i++) {
@@ -57,6 +58,7 @@ public class FallenConfig {
     }
 
     public List<String> buildClassNames() {
+        if (pkg.isEmpty()) return List.of();
         return patches.stream().map(s -> pkg + "." + s).collect(Collectors.toList());
     }
 }
