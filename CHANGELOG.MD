@@ -3,7 +3,8 @@
 ## 1.3
 ---
 ### 1.3.2
-- Implement a simple delegating mixin connector registry (experimental)
+- Implement a simple delegating mixin connector registry
+- Add empty checks for fallen config json file
 
 ### 1.3.1
 - Distribute runtime environment
