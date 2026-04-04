@@ -17,28 +17,12 @@ import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
-import static net.minecraftforge.fml.loading.LogMarkers.LOADING;
 import static net.rtxyd.fallen.lib.service.FallenBootstrap.LOGGER;
 
 public class SimpleModLocator extends AbstractJarFileModProvider implements IModLocator {
-
-    // @Override
-    public Stream<Path> scanCandidates() {
-        var paths = Stream.<Path>builder();
-        Path path = getPath();
-        if (path == null) return paths.build();
-        return paths.add(path).build();
-    }
 
     public Path getPath() {
         final String runtime_loc = "META-INF/runtime/";
@@ -60,7 +44,11 @@ public class SimpleModLocator extends AbstractJarFileModProvider implements IMod
             } else {
                 url = this.getClass().getClassLoader().getResource("net/rtxyd/fallen/lib/runtime/forgemod/FallenLib.class");
                 if (url == null) {
+                    // runtime should always pair with core.
                     throw new RuntimeException("Can't find fallen runtime lib!");
+                } else {
+                    // if we found the class, it means forge can load it.
+                    return null;
                 }
             }
         }
@@ -73,7 +61,7 @@ public class SimpleModLocator extends AbstractJarFileModProvider implements IMod
 
     @Override
     public String name() {
-        return "fallen lib mod locator";
+        return "fallen_lib_mod_locator";
     }
 
     @Override
@@ -100,70 +88,5 @@ public class SimpleModLocator extends AbstractJarFileModProvider implements IMod
 
             throw exception;
         }
-    }
-
-    public UniqueModListBuilder.UniqueModListData preprocess(List<ModFile> modFiles) {
-        List<ModFile> uniqueLibListWithVersion;
-        final Map<String, List<ModFile>> libFilesWithVersionByModuleName = modFiles.stream()
-                .filter(mf -> mf.getModFileInfo() == null)
-                .collect(groupingBy(this::getModId));
-        uniqueLibListWithVersion = libFilesWithVersionByModuleName.entrySet().stream()
-                .map(this::selectNewestModInfo)
-                .toList();
-        final Map<String, List<ModFile>> versionedLibIds = uniqueLibListWithVersion.stream()
-                .map(this::getModId)
-                .collect(Collectors.toMap(
-                        Function.identity(),
-                        libFilesWithVersionByModuleName::get
-                ));
-        final List<String> dupedLibErrors = versionedLibIds.values().stream()
-                .filter(files -> files.size() > 1)
-                .map(mods -> String.format("\tLibrary: '%s' from files: %s",
-                        getModId(mods.get(0)),
-                        mods.stream()
-                                .map(modFile -> modFile.getFileName()).collect(joining(", "))
-                )).toList();
-        if (!dupedLibErrors.isEmpty()) {
-            LOGGER.error(LOADING, "Found duplicate plugins or libraries:\n{}", dupedLibErrors.stream().collect(joining("\n")));
-            throw new EarlyLoadingException("Duplicate plugins or libraries found", null, dupedLibErrors.stream()
-                    .map(s -> new EarlyLoadingException.ExceptionData(s))
-                    .toList());
-        }
-        final List<ModFile> loadedList = new ArrayList<>();
-        loadedList.addAll(uniqueLibListWithVersion);
-        return new UniqueModListBuilder.UniqueModListData(loadedList, Map.of());
-    }
-
-    public void postprocess(UniqueModListBuilder.UniqueModListData data){
-        Map<IModFile.Type, List<ModFile>> modFilesMap = Maps.newHashMap();
-        modFilesMap = data.modFiles().stream()
-                .collect(Collectors.groupingBy(IModFile::getType));
-    }
-
-    private ModFile selectNewestModInfo(Map.Entry<String, List<ModFile>> fullList) {
-        List<ModFile> modInfoList = fullList.getValue();
-        if (modInfoList.size() > 1) {
-            LOGGER.debug("Found {} mods for first modid {}, selecting most recent based on version data", modInfoList.size(), fullList.getKey());
-            modInfoList.sort(Comparator.comparing(this::getVersion).reversed());
-            LOGGER.debug("Selected file {} for modid {} with version {}", modInfoList.get(0).getFileName(), fullList.getKey(), this.getVersion(modInfoList.get(0)));
-        }
-        return modInfoList.get(0);
-    }
-
-    private ArtifactVersion getVersion(final ModFile mf)
-    {
-        if (mf.getModFileInfo() == null || mf.getModInfos() == null || mf.getModInfos().isEmpty()) {
-            return mf.getJarVersion();
-        }
-
-        return mf.getModInfos().get(0).getVersion();
-    }
-
-    private String getModId(ModFile modFile) {
-        if (modFile.getModFileInfo() == null || modFile.getModFileInfo().getMods().isEmpty()) {
-            return modFile.getSecureJar().name();
-        }
-
-        return modFile.getModFileInfo().moduleName();
     }
 }
