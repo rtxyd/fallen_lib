@@ -2,6 +2,7 @@ package net.rtxyd.fallen.lib.runtime.forgemod;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -23,9 +24,9 @@ public class FallenLib {
         IEventBus bus = context.getModEventBus();
         if (ModList.get().isLoaded("apotheosis")) {
             bus.addListener(this::init);
-            if (!SimpleMixinConnector.FGACheck.getStage().equals(FGAVersionStage.FL_ONE_TWO)) {
-                MinecraftForge.EVENT_BUS.addListener(Common::onAddReloadListeners);
-                MinecraftForge.EVENT_BUS.addListener();
+            if (SimpleMixinConnector.FGACheck == null
+                    || !SimpleMixinConnector.FGACheck.getStage().equals(FGAVersionStage.FL_ONE_TWO)) {
+                MinecraftForge.EVENT_BUS.addListener(EventPriority.LOW, Common::onAddReloadListeners);
             }
         }
     }
@@ -35,6 +36,7 @@ public class FallenLib {
     }
 
     public void init(FMLCommonSetupEvent e) {
+        Connection.register();
         e.enqueueWork(() -> {
         });
     }

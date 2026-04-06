@@ -17,7 +17,7 @@ public class Connection {
         return packetId++;
     }
 
-    public void register() {
+    public static void register() {
         SimpleChannel net = NetworkRegistry.ChannelBuilder
                 .named(ResourceLocation.fromNamespaceAndPath(FallenLib.MODID, "netwwk"))
                 .networkProtocolVersion(() -> "1.0")
@@ -32,11 +32,22 @@ public class Connection {
                 .encoder(ClientBoundSyncExtraGemBonusesPacket.BUF_CODEC::encode)
                 .consumerMainThread(ClientBoundSyncExtraGemBonusesPacket::handle)
                 .add();
+
+        net.messageBuilder(ClientBoundSyncExtraGemBonusesPacket.Begin.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(t -> new ClientBoundSyncExtraGemBonusesPacket.Begin())
+                .encoder((a ,b) -> {})
+                .consumerNetworkThread(ClientBoundSyncExtraGemBonusesPacket.Begin::handle)
+                .add();
+
+        net.messageBuilder(ClientBoundSyncExtraGemBonusesPacket.End.class, id(), NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(t -> new ClientBoundSyncExtraGemBonusesPacket.End())
+                .encoder((a ,b) -> {})
+                .consumerNetworkThread(ClientBoundSyncExtraGemBonusesPacket.End::handle)
+                .add();
     }
 
     public static <MSG> void sendToPlayer(MSG data, ServerPlayer player) {
         INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), data);
-
     }
 
     public static <MSG> void sendToAllPlayers(MSG data) {
