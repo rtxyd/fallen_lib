@@ -15,7 +15,9 @@ public class ItemStackMixin implements ItemStackCakyGetter {
     @Override
     public <T> T fallen_lib$getObjectCaky(String id, ObjectCaky.CakyLoader<ItemStack, T> loader, ObjectCaky.CakyReviewer<ItemStack> reviewer) {
         if (fallen_lib$caky == null) {
-            fallen_lib$caky = new ObjectCaky();
+            synchronized (this) {
+                fallen_lib$caky = new ObjectCaky();
+            }
         }
         return fallen_lib$caky.resolve((ItemStack) (Object) this, id, loader, reviewer);
     }

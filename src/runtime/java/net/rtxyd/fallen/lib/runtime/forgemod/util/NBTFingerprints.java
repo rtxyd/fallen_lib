@@ -8,14 +8,14 @@ public final class NBTFingerprints {
     public static ObjectCaky.CakyReviewer<ItemStack> fullNBT() {
         return stack -> {
             var tag = stack.getTag();
-            return tag != null ? tag.hashCode() : 0;
+            return tag != null ? tag.hashCode() : Integer.MIN_VALUE;
         };
     }
 
     public static ObjectCaky.CakyReviewer<ItemStack> subTag(String key) {
         return stack -> {
             var tag = stack.getTagElement(key);
-            return tag != null ? tag.hashCode() : 0;
+            return tag != null ? tag.hashCode() : Integer.MIN_VALUE;
         };
     }
 }
