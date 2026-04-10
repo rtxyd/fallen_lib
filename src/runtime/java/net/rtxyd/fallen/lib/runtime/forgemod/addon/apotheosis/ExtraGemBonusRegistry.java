@@ -16,7 +16,6 @@ import dev.shadowsoffire.placebo.reload.DynamicHolder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.conditions.ICondition;
@@ -28,6 +27,7 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 import net.rtxyd.fallen.lib.runtime.forgemod.FallenLib;
 import net.rtxyd.fallen.lib.runtime.forgemod.network.ClientBoundSyncExtraGemBonusesPacket;
 import net.rtxyd.fallen.lib.runtime.forgemod.network.Connection;
+import net.rtxyd.fallen.lib.runtime.forgemod.network.AbstractPacketBoundRegistry;
 import net.rtxyd.fallen.lib.runtime.forgemod.util.ICodecProvider;
 
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class ExtraGemBonusRegistry extends SimpleJsonResourceReloadListener {
+public class ExtraGemBonusRegistry extends AbstractPacketBoundRegistry<ExtraGemBonusRegistry.ExtraGemBonus, ClientBoundSyncExtraGemBonusesPacket.Begin, ClientBoundSyncExtraGemBonusesPacket, ClientBoundSyncExtraGemBonusesPacket.End> {
 
     public static final ExtraGemBonusRegistry INSTANCE = new ExtraGemBonusRegistry("extra_gem_bonuses");
 
@@ -74,28 +74,19 @@ public class ExtraGemBonusRegistry extends SimpleJsonResourceReloadListener {
         this.onReload();
     }
 
+    @Override
     public void beginReload() {
         this.registry = HashBiMap.create();
         this.extraBonuses = HashMultimap.create();
         this.clearExtraGemBonuses();
     }
 
+    @Override
     public void onReload() {
         for (ExtraGemBonus extraBonus : registry.values()) {
             this.extraBonuses.put(extraBonus.gem, extraBonus);
         }
         this.applyExtraGemBonuses();
-    }
-
-    public static void register(final AddReloadListenerEvent event) {
-        event.addListener(INSTANCE);
-        if (INSTANCE.context != null) return;
-        INSTANCE.context = event.getConditionContext();
-        registerSync();
-    }
-
-    private static void registerSync() {
-        MinecraftForge.EVENT_BUS.addListener(INSTANCE::syncClient);
     }
 
     private void applyExtraGemBonuses() {
@@ -121,47 +112,9 @@ public class ExtraGemBonusRegistry extends SimpleJsonResourceReloadListener {
         }
     }
 
-    // serverside
-    private void syncClient(OnDatapackSyncEvent e) {
-        ServerPlayer player = e.getPlayer();
-        PacketDistributor.PacketTarget target = player == null ? PacketDistributor.ALL.noArg() : PacketDistributor.PLAYER.with(() -> player);
-        Connection.sendToTarget(target, new ClientBoundSyncExtraGemBonusesPacket.Begin());
-        registry.forEach((path, bonus) -> {
-            Connection.sendToTarget(target, new ClientBoundSyncExtraGemBonusesPacket(path, bonus));
-        });
-        Connection.sendToTarget(target, new ClientBoundSyncExtraGemBonusesPacket.End());
-    }
-
-    private void beginSync() {
-    }
-
-    private void registerTempEntry(ResourceLocation loc, ExtraGemBonus extraGemBonus) {
-        this.temp.put(loc, extraGemBonus);
-    }
-
-    public void handleBegin(Supplier<NetworkEvent.Context> contextSupplier) {
-        contextSupplier.get().enqueueWork(this::beginSync);
-    }
-
-    public void handleEntry(Supplier<NetworkEvent.Context> contextSupplier, ResourceLocation loc, ExtraGemBonus extraGemBonus) {
-        contextSupplier.get().enqueueWork(() -> {
-            this.registerTempEntry(loc, extraGemBonus);
-        });
-    }
-
-    public void handleEnd(Supplier<NetworkEvent.Context> contextSupplier) {
-        if (ServerLifecycleHooks.getCurrentServer() != null) return;
-        contextSupplier.get().enqueueWork(() -> {
-            this.beginReload();
-            this.applyTemp();
-            this.onReload();
-        });
-    }
-
-    private void applyTemp() {
-        temp.forEach((k,v)->{
-            registry.put(k,v);
-        });
+    @Override
+    public Codec<? extends ExtraGemBonus> getCodec() {
+        return ExtraGemBonus.CODEC;
     }
 
     public record ExtraGemBonus(DynamicHolder<Gem> gem,

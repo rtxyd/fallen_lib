@@ -11,6 +11,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.rtxyd.fallen.lib.runtime.forgemod.addon.apotheosis.ExtraGemBonusRegistry;
 import net.rtxyd.fallen.lib.runtime.forgemod.compat.fga.FGAVersionStage;
 import net.rtxyd.fallen.lib.runtime.forgemod.event.Common;
+import net.rtxyd.fallen.lib.runtime.forgemod.network.ClientBoundSyncExtraGemBonusesPacket;
 import net.rtxyd.fallen.lib.runtime.forgemod.network.Connection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +27,7 @@ public class FallenLib {
             bus.addListener(this::init);
             if (SimpleMixinConnector.FGACheck == null
                     || !SimpleMixinConnector.FGACheck.getStage().equals(FGAVersionStage.FL_ONE_TWO)) {
-                MinecraftForge.EVENT_BUS.addListener(EventPriority.LOW, Common::onAddReloadListeners);
+                Connection.register();
             }
         }
     }
@@ -36,7 +37,6 @@ public class FallenLib {
     }
 
     public void init(FMLCommonSetupEvent e) {
-        Connection.register();
         e.enqueueWork(() -> {
         });
     }
