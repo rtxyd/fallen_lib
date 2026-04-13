@@ -5,10 +5,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
-import net.rtxyd.fallen.lib.runtime.forgemod.FallenLib;
 import net.rtxyd.fallen.lib.runtime.forgemod.util.FriendlyByteBufCodec;
+import net.rtxyd.fallen.lib.runtime.forgemod.util.ICodecProvider;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM> implements IVanillaLikeCustomPacketPayload {
+public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>> implements IVanillaLikeCustomPacketPayload {
     private final ResourceLocation path;
     private final REGISTRY_ITEM registryItem;
     @SuppressWarnings("rawtypes")
@@ -27,14 +27,12 @@ public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM> implemen
         this.registryItem = registryItem;
     }
 
-    @SuppressWarnings("unchecked")
     protected Codec<REGISTRY_ITEM> getBoundItemCodec() {
         var registry = getBoundRegistry(this.getClassAuto());
         if (registry == null) {
-            FallenLib.LOGGER.error("{} is not bound!", this.getClass());
-            throw new RuntimeException("Packet is not bound!");
+            throw new RuntimeException(String.format("Packet [%s] registry is not bound!", this.getClass()));
         }
-        return (Codec<REGISTRY_ITEM>) registry.getCodec();
+        return  registry.getCodec();
     };
 
     public final ResourceLocation getPath() {
@@ -53,18 +51,19 @@ public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM> implemen
         return (Class<? extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>>) this.getClass();
     }
 
-    static <A, B extends AbstractRegistryBoundPacketPayload.IBegin<C>, C extends AbstractRegistryBoundPacketPayload<A>, D extends AbstractRegistryBoundPacketPayload.IEnd<C>>
+    static <A extends ICodecProvider<A>, B extends AbstractRegistryBoundPacketPayload.IBegin<C>, C extends AbstractRegistryBoundPacketPayload<A>, D extends AbstractRegistryBoundPacketPayload.IEnd<C>>
     void boundRegistrySingleton(Class<? extends AbstractRegistryBoundPacketPayload<A>> packetClass, AbstractPacketBoundRegistry<A, B, C ,D> instance) {
         REGISTRY_SINGLETONS.computeIfAbsent(packetClass, k -> instance);
     }
 
     @SuppressWarnings("unchecked")
-    public static <A, B extends AbstractRegistryBoundPacketPayload.IBegin<C>, C extends AbstractRegistryBoundPacketPayload<A>, D extends AbstractRegistryBoundPacketPayload.IEnd<C>>
+    public static <A extends ICodecProvider<A>, B extends AbstractRegistryBoundPacketPayload.IBegin<C>, C extends AbstractRegistryBoundPacketPayload<A>, D extends AbstractRegistryBoundPacketPayload.IEnd<C>>
     AbstractPacketBoundRegistry<A, B, C, D> getBoundRegistry(Class<C> registryClass) {
         return (AbstractPacketBoundRegistry<A, B, C, D>) REGISTRY_SINGLETONS.get(registryClass);
     }
 
-    public static <ORIGIN extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>, REGISTRY_ITEM> FriendlyByteBufCodec<ORIGIN> createByteBufCodec(
+    public static <ORIGIN extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>, REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>> FriendlyByteBufCodec<ORIGIN> createByteBufCodec(
+            Logger logger,
             Codec<REGISTRY_ITEM> itemCodec,
             BiFunction<ResourceLocation, REGISTRY_ITEM , ORIGIN> constructor
     ) {
@@ -73,7 +72,7 @@ public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM> implemen
             public void encode(@NotNull ORIGIN value, @NotNull FriendlyByteBuf buf) {
                 buf.writeResourceLocation(value.getPath());
                 buf.writeNbt((CompoundTag) itemCodec.encodeStart(NbtOps.INSTANCE, value.getItem())
-                        .getOrThrow(false,s -> FallenLib.LOGGER.error("Failed parsing item for {}", value.getItem())));
+                        .getOrThrow(false,s -> logger.error("Failed parsing item for {}", value.getItem())));
             }
 
             @Override
@@ -81,7 +80,7 @@ public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM> implemen
                 ResourceLocation path = buf.readResourceLocation();
                 CompoundTag tag = buf.readNbt();
                 var result = itemCodec.decode(NbtOps.INSTANCE, tag)
-                        .getOrThrow(false,s -> FallenLib.LOGGER.error("Failed parsing received payload for {}", path)).getFirst();
+                        .getOrThrow(false,s -> logger.error("Failed parsing received payload for {}", path)).getFirst();
                 return constructor.apply(path, result);
             }
         };

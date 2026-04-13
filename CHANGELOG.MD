@@ -6,6 +6,7 @@
 ## Runtime.forgemod
 - Crude SyncableRegistry, with network handler (now it's poor version of `DynamicRegistry` in Placebo)
 - Simple 1.21.1 like Connection for network
+- 1.3.3.1/1.3.3.2 -> Implement `AbstractPacketBoundRegistry`, `AbstractRegistryBoundPacketPayload`, `AbstractSingleEntryPacketPayLoad`
 
 ### 1.3.3
 ## Core

@@ -10,7 +10,8 @@ public class ClientBoundSyncExtraGemBonusesPacket extends AbstractRegistryBoundP
 
     public static final String version = "1.0";
     public static final Type<ClientBoundSyncExtraGemBonusesPacket> TYPE = IVanillaLikeCustomPacketPayload.createType(FallenLib.MODID, "egb_cl");
-    public static final FriendlyByteBufCodec<ClientBoundSyncExtraGemBonusesPacket> BUF_CODEC = createByteBufCodec(ExtraGemBonusRegistry.ExtraGemBonus.CODEC, ClientBoundSyncExtraGemBonusesPacket::new);
+    public static final FriendlyByteBufCodec<ClientBoundSyncExtraGemBonusesPacket> BUF_CODEC =
+            createByteBufCodec(FallenLib.LOGGER, ExtraGemBonusRegistry.ExtraGemBonus.CODEC, ClientBoundSyncExtraGemBonusesPacket::new);
 
     @Override
     public @NotNull Type<ClientBoundSyncExtraGemBonusesPacket> type() {

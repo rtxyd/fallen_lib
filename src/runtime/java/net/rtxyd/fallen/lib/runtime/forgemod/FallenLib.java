@@ -7,6 +7,7 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.rtxyd.fallen.lib.runtime.forgemod.addon.apotheosis.ExtraGemBonusRegistry;
 import net.rtxyd.fallen.lib.runtime.forgemod.compat.fga.FGAVersionStage;
 import net.rtxyd.fallen.lib.runtime.forgemod.network.Connection;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +37,7 @@ public class FallenLib {
         e.enqueueWork(() -> {
             FallenLib.LOGGER.info("Register fallen lib connection.");
             Connection.register();
+            ExtraGemBonusRegistry.INSTANCE.registerCodec(ResourceLocation.fromNamespaceAndPath(FallenLib.MODID, "extra_gem_bonus"), ExtraGemBonusRegistry.ExtraGemBonus.CODEC);
         });
     }
 }

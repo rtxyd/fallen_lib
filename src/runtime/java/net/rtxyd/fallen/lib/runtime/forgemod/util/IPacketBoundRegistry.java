@@ -8,7 +8,7 @@ import net.rtxyd.fallen.lib.runtime.forgemod.network.AbstractRegistryBoundPacket
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-public interface IPacketBoundRegistry<REGISTRY_ITEM> {
+public interface IPacketBoundRegistry<REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>> {
 
     void beginReload();
 
@@ -21,6 +21,8 @@ public interface IPacketBoundRegistry<REGISTRY_ITEM> {
 
     void registerTempEntry(ResourceLocation loc, REGISTRY_ITEM extraGemBonus);
 
+    void validateItem(ResourceLocation loc, REGISTRY_ITEM item);
+
     void handleBegin(Supplier<NetworkEvent.Context> contextSupplier);
 
     void handleProcess(Supplier<NetworkEvent.Context> contextSupplier, ResourceLocation path, REGISTRY_ITEM item);
@@ -29,7 +31,7 @@ public interface IPacketBoundRegistry<REGISTRY_ITEM> {
 
     void applyTemp();
 
-    public static record Constructors3<REGISTRY_ITEM,
+    public static record Constructors3<REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>,
     BEGIN extends AbstractRegistryBoundPacketPayload.IBegin<PROCESS>,
     PROCESS extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>,
     END extends AbstractRegistryBoundPacketPayload.IEnd<PROCESS>>(Supplier<BEGIN> beginConstructor, BiFunction<ResourceLocation, REGISTRY_ITEM, PROCESS> processConstructor, Supplier<END> endConstructor) {}

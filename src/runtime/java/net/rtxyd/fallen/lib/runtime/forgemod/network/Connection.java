@@ -11,6 +11,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import net.rtxyd.fallen.lib.runtime.forgemod.FallenLib;
 import net.rtxyd.fallen.lib.runtime.forgemod.addon.apotheosis.ExtraGemBonusRegistry;
 import net.rtxyd.fallen.lib.runtime.forgemod.util.FriendlyByteBufCodec;
+import net.rtxyd.fallen.lib.runtime.forgemod.util.ICodecProvider;
 import net.rtxyd.fallen.lib.runtime.forgemod.util.IPacketBoundRegistry;
 
 import java.util.function.BiConsumer;
@@ -39,7 +40,7 @@ public class Connection {
                 ClientBoundSyncExtraGemBonusesPacket.End.class,     ClientBoundSyncExtraGemBonusesPacket.End::new,      ClientBoundSyncExtraGemBonusesPacket.End::handle);
     }
 
-    public static <REGISTRY_ITEM,
+    public static <REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>,
             BEGIN extends AbstractRegistryBoundPacketPayload.IBegin<PROCESS>,
             PROCESS extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>,
             END extends AbstractRegistryBoundPacketPayload.IEnd<PROCESS>,
@@ -64,7 +65,7 @@ public class Connection {
                 .encoder(nullEncoderAuto())
                 .decoder(t -> endConstructor.get())
                 .consumerMainThread(endHandler).add();
-        singleton.initConstructors(new IPacketBoundRegistry.Constructors3<>(beginConstructor, processConstructor, endConstructor));
+        singleton.initPacketsConstructors(new AbstractPacketBoundRegistry.Constructors3<>(beginConstructor, processConstructor, endConstructor));
         AbstractPacketBoundRegistry.registerSingleton(singleton);
         AbstractRegistryBoundPacketPayload.boundRegistrySingleton(process, singleton);
         singleton.registerSync();
