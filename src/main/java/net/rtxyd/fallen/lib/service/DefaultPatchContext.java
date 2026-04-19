@@ -27,6 +27,12 @@ public class DefaultPatchContext implements IFallenPatchContext {
         this.classNode = node;
     }
 
+    /**
+     * Please use this carefully. It can only be manually patch.
+     * Better with PatchUtil
+     * @return ClassNode, current patching class
+     */
+    @Override
     public ClassNode getClassNode() {
         return this.classNode;
     }
