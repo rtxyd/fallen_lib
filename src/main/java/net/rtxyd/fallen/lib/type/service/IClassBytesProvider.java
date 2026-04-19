@@ -1,8 +1,8 @@
 package net.rtxyd.fallen.lib.type.service;
 
-import java.io.File;
+import net.rtxyd.fallen.lib.type.engine.Resource;
 
 @FunctionalInterface
 public interface IClassBytesProvider {
-    byte[] getClassBytes(File container, String path);
+    byte[] getClassBytes(Resource resource, String path);
 }

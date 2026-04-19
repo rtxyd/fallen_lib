@@ -2,8 +2,12 @@ package net.rtxyd.fallen.lib.service;
 
 import net.rtxyd.fallen.lib.api.IFallenPatch;
 import net.rtxyd.fallen.lib.config.FallenConfig;
+import net.rtxyd.fallen.lib.engine.JarInJarContainer;
+import net.rtxyd.fallen.lib.engine.JarInJarResource;
+import net.rtxyd.fallen.lib.type.engine.Resource;
 import net.rtxyd.fallen.lib.type.engine.ResourceContainer;
 import net.rtxyd.fallen.lib.type.service.IClassBytesProvider;
+import net.rtxyd.fallen.lib.type.service.IPatchEntryFunc;
 import net.rtxyd.fallen.lib.util.patch.InserterMethodData;
 import net.rtxyd.fallen.lib.util.patch.InserterType;
 import net.rtxyd.fallen.lib.util.patch.PatchOption;
@@ -20,20 +24,29 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-class PatchEntryHelper {
+public class PatchEntryHelper {
 
     private final IPatchSecurityHelper securityHelper = new PatchSecurityHelperV2();
 
     // out parameters must not be null
-    public void buildPatchEntries(FallenConfig cfg, ResourceContainer rc, List<FallenPatchEntry> outEntries, Map<String, byte[]> outStoredBytes) {
-        Optional<File> contOpt = rc.asFile();
+    public void buildPatchEntries(FallenConfig cfg, Resource rc, List<FallenPatchEntry> outEntries, Map<String, byte[]> outPatchBytes) {
+        Optional<File> contOpt = rc.container().asFile();
         if (contOpt.isEmpty()) {
-             return;
+            if (rc instanceof JarInJarResource jr) {
+                try {
+                    buildEntriesInnerJr(cfg, jr, outEntries, outPatchBytes, this::parseAndBuild);
+                } catch (IOException e) {
+                    FallenBootstrap.LOGGER.error("Failed build entries for [{}], file [{}]", cfg.getPackage(), jr.calculateLocation(jr.getMaxDepth()));
+                    e.printStackTrace();
+                }
+            }
+            return;
         }
         File cont = contOpt.get();
         // in development environment.
         if (cont.isDirectory()) {
-            buildEntriesInner(outEntries, outStoredBytes, cfg, cont, (f, zn) -> {
+            buildEntriesInner(outEntries, outPatchBytes, cfg, rc, (file, zn) -> {
+                File f = file.container().asFile().orElseThrow();
                 try (InputStream isA = getClass().getClassLoader().getResourceAsStream(zn)) {
                     if (isA != null) {
                         return isA.readAllBytes();
@@ -48,11 +61,12 @@ class PatchEntryHelper {
                     FallenBootstrap.LOGGER.debug("Failed parsing [{}] in folder [{}]", zn, f.getName(), e);
                     return null;
                 }
-            });
+            }, this::parseAndBuild);
             return;
         }
 
-        buildEntriesInner(outEntries, outStoredBytes, cfg, cont, (jar, zn) -> {
+        buildEntriesInner(outEntries, outPatchBytes, cfg, rc, (jarResource, zn) -> {
+            File jar = jarResource.container().asFile().orElseThrow();
             try (JarFile jarFile = new JarFile(jar)) {
                 JarEntry jarEntry = jarFile.getJarEntry(zn);
                 if (jarEntry == null) {
@@ -66,15 +80,53 @@ class PatchEntryHelper {
                 FallenBootstrap.LOGGER.debug("Failed parsing [{}] in jarFile [{}]",zn, jar.getName(), e);
                 return null;
             }
+        }, this::parseAndBuild);
+    }
+
+    private void buildEntriesInnerJr(FallenConfig cfg, JarInJarResource jr, List<FallenPatchEntry> outEntries, Map<String, byte[]> outStoredBytes, IPatchEntryFunc entrySupplier) throws IOException {
+        List<String> cls = cfg.buildClassNames();
+        jr.openParent(jis -> {
+            JarEntry entry;
+            int counter = 0;
+            int size = cls.size();
+            String name = cls.get(counter);
+            String zn = name.replace(".", "/") + ".class";
+
+            try {
+                while ((entry = jis.getNextJarEntry()) != null && counter < size) {
+                    if (entry.getName().endsWith(zn)) {
+                        zn = cls.get(counter).replace(".", "/") + ".class";
+                        counter += 1;
+                        byte[] bytesA = jis.readAllBytes();
+                        ClassNode cn = new ClassNode();
+                        new ClassReader(bytesA).accept(cn, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                        if (cn.invisibleAnnotations != null) {
+                            AsmAnnotationDataFactory factory = new AsmAnnotationDataFactory(cn.invisibleAnnotations);
+                            Optional<AnnotationData> opt = factory.getAnnotation("Lnet/rtxyd/fallen/lib/api/annotation/FallenPatch;");
+                            if (opt.isEmpty()
+                                    || !securityHelper.isPatchClassSafe(cn)) {
+                                continue;
+                            }
+                            FallenPatchEntry pEntry = entrySupplier.with(name, opt.get(), jr);
+                            outEntries.add(pEntry);
+                            outStoredBytes.put(name, bytesA);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                FallenBootstrap.LOGGER.debug("Failed parsing inner jar {}",
+                        jr.calculateLocation(((JarInJarContainer) jr.container()).getInnerJarFiles().size()), e);
+            }
         });
     }
 
-    private void buildEntriesInner(List<FallenPatchEntry> entries, Map<String, byte[]> restoredBytes, FallenConfig cfg, File cont, IClassBytesProvider bytesFunction) {
+    private void buildEntriesInner(List<FallenPatchEntry> entries, Map<String, byte[]> patchBytes, FallenConfig cfg, Resource rc, IClassBytesProvider bytesFunction, IPatchEntryFunc entrySupplier) {
         int counter = 0;
-        for (String className : cfg.buildClassNames()) {
-            String zn = className.replace(".", "/") + ".class";
+        List<String> cfgCls = cfg.buildClassNames();
+        for (String patchName : cfgCls) {
+            String zn = patchName.replace(".", "/") + ".class";
             try {
-                byte[] inputBytes = bytesFunction.getClassBytes(cont, zn);
+                byte[] inputBytes = bytesFunction.getClassBytes(rc, zn);
                 if (inputBytes == null) {
                     continue;
                 }
@@ -88,9 +140,9 @@ class PatchEntryHelper {
                             || !securityHelper.isPatchClassSafe(cn)) {
                         continue;
                     }
-                    FallenPatchEntry pEntry = this.parseAndBuild(className, opt.get(), cont);
+                    FallenPatchEntry pEntry = entrySupplier.with(patchName, opt.get(), rc);
                     entries.add(pEntry);
-                    restoredBytes.put(className, inputBytes);
+                    patchBytes.put(patchName, inputBytes);
                     counter += 1;
                 }
             } catch (Exception e) {
@@ -103,11 +155,11 @@ class PatchEntryHelper {
     }
 
 //    @SuppressWarnings("unchecked")
-    public FallenPatchEntry parseAndBuild(String className, AnnotationData data, File cont) {
+    public FallenPatchEntry parseAndBuild(String className, AnnotationData data, Resource rc) {
         Integer pr = (Integer) data.get("priority");
         List<String> ic = data.getWithDefaut("inserters", List.of());
         Map<String, InserterMethodData> inserterMap = new HashMap<>();
-        buildInserter(inserterMap, ic, cont);
+        buildInserter(inserterMap, ic, rc);
         if (inserterMap.isEmpty()) {
             FallenBootstrap.LOGGER.debug("Warning: inserters of {} is empty. May be unstandard patch.", className);
         }
@@ -132,16 +184,53 @@ class PatchEntryHelper {
         return buildEntry(className, pr, targets, inserterMap);
     }
 
-    private void buildInserter(Map<String, InserterMethodData> inserterMap, List<String> classNames, File cont) {
-        for (String className : classNames) {
-            parseAndBuildInserter(inserterMap, cont, className);
+    private void buildInserter(Map<String, InserterMethodData> inserterMap, List<String> classNames, Resource rc) {
+        if (rc instanceof JarInJarResource jr) {
+            try {
+                parseAndBuildInserterJr(inserterMap, classNames, jr);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+        if (rc.container().isDirectory()) {
+            for (String className : classNames) {
+                parseAndBuildInserter(inserterMap, rc, className);
+            }
         }
     }
 
-    private void parseAndBuildInserter(Map<String, InserterMethodData> inserterMap, File cont, String className) {
+    private void parseAndBuildInserterJr(Map<String, InserterMethodData> inserterMap, List<String> cls, JarInJarResource jr) throws IOException {
+        jr.openParent(jis -> {
+            JarEntry entry;
+            int counter = 0;
+            int size = cls.size();
+            String name = cls.get(counter);
+            String internal = name.replace(".", "/");
+            String zn = internal + ".class";
+            try {
+                while ((entry = jis.getNextJarEntry()) != null && counter < size) {
+                    if (entry.getName().endsWith(zn)) {
+                        zn = cls.get(counter).replace(".", "/") + ".class";
+                        counter += 1;
+                        byte[] bytesA = jis.readAllBytes();
+                        ClassNode cn = new ClassNode();
+                        new ClassReader(bytesA).accept(cn, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                        buildInserterInner(inserterMap, cn, internal, name);
+                    }
+                }
+            } catch (IOException e) {
+                FallenBootstrap.LOGGER.debug("Failed parsing inner jar {}",
+                        jr.calculateLocation(((JarInJarContainer) jr.container()).getInnerJarFiles().size()), e);
+            }
+        });
+    }
+
+    private void parseAndBuildInserter(Map<String, InserterMethodData> inserterMap, Resource rc, String className) {
         String internal = className.replace(".", "/");
         String zn = internal + ".class";
         // in development environment.
+        ResourceContainer cont = rc.container();
         if (cont.isDirectory()) {
             ClassNode cn = null;
             try (InputStream isA = getClass().getClassLoader().getResourceAsStream(zn)) {
@@ -165,7 +254,7 @@ class PatchEntryHelper {
             }
             return;
         }
-        try (JarFile jarFile = new JarFile(cont)) {
+        try (JarFile jarFile = new JarFile(cont.asFile().orElseThrow())) {
             JarEntry jarEntry = jarFile.getJarEntry(zn);
             if (jarEntry == null) {
                 FallenBootstrap.LOGGER.warn("Warning: inserter class file [{}] not found in [{}]", zn, cont.getName());
@@ -183,7 +272,7 @@ class PatchEntryHelper {
 
     private void buildInserterInner(Map<String, InserterMethodData> inserterMap, ClassNode cn, String internalName, String qualifiedName) {
         String sStandard = InserterType.standardStarter();
-        String fInserter = IFallenPatch.fallenInserterInternalName();
+        String fInserter = IFallenPatch.fallenInserterDescriptor();
         for (MethodNode mn : cn.methods) {
             if (mn.invisibleAnnotations != null) {
                 AsmAnnotationDataFactory factory = new AsmAnnotationDataFactory(mn.invisibleAnnotations);
@@ -199,7 +288,9 @@ class PatchEntryHelper {
                 }
                 if ((mn.access & Opcodes.ACC_PUBLIC) != 0
                         && (mn.access & Opcodes.ACC_STATIC) != 0) {
-                    if (!mn.desc.startsWith(sStandard)) continue;
+                    if (!mn.desc.startsWith(sStandard)) {
+                        throw new UnsupportedOperationException(String.format("Inserter method descriptor mismatches! Expect: %s", sStandard));
+                    }
                     InserterMethodData.Params detail;
                     AnnotationData params = (AnnotationData) data.get("params");
                     if (params == null) {

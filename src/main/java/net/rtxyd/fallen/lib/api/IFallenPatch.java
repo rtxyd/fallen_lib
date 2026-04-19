@@ -2,7 +2,6 @@ package net.rtxyd.fallen.lib.api;
 
 import net.rtxyd.fallen.lib.api.annotation.FallenPatch;
 import net.rtxyd.fallen.lib.type.service.IFallenPatchContext;
-import org.objectweb.asm.tree.ClassNode;
 
 /**
  * Implementation must be annotated with {@link FallenPatch}.
@@ -15,7 +14,7 @@ import org.objectweb.asm.tree.ClassNode;
  */
 @FallenPatch
 public interface IFallenPatch {
-    static String fallenPatchInternalName() {return "Lnet/rtxyd/fallen/lib/api/annotation/FallenPatch;";}
-    static String fallenInserterInternalName() {return "Lnet/rtxyd/fallen/lib/api/annotation/FallenInserter;";}
+    static String fallenPatchDescriptor() {return "Lnet/rtxyd/fallen/lib/api/annotation/FallenPatch;";}
+    static String fallenInserterDescriptor() {return "Lnet/rtxyd/fallen/lib/api/annotation/FallenInserter;";}
     void apply(IFallenPatchContext ctx);
 }
