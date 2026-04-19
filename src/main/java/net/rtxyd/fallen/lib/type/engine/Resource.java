@@ -7,6 +7,7 @@ public interface Resource {
     String path();
     InputStream open() throws IOException;
     ResourceContainer container();
+    boolean isHandledByOuterStream();
     default boolean isRoot() {
         return !path().contains("/");
     }

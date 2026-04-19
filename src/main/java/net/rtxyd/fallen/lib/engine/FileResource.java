@@ -35,4 +35,9 @@ class FileResource implements Resource {
     public ResourceContainer container() {
         return container;
     }
+
+    @Override
+    public boolean isHandledByOuterStream() {
+        return false;
+    }
 }

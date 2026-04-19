@@ -3,6 +3,7 @@ package net.rtxyd.fallen.lib.engine;
 import net.rtxyd.fallen.lib.config.FallenConfig;
 import net.rtxyd.fallen.lib.service.FallenPatchEntry;
 import net.rtxyd.fallen.lib.type.engine.IScanContext;
+import net.rtxyd.fallen.lib.type.engine.Resource;
 import net.rtxyd.fallen.lib.type.engine.ResourceContainer;
 
 import java.util.*;
@@ -10,11 +11,11 @@ import java.util.*;
 public class ScanContext implements IScanContext {
     public final ClassIndex classIndex = new ClassIndex();
     protected final List<FallenPatchEntry> internalPatchEntries = new ArrayList<>();
-    protected final Map<FallenConfig, ResourceContainer> internalConfigContainers = new HashMap<>();
+    protected final Map<FallenConfig, Resource> internalConfigs = new HashMap<>();
     protected final Map<String, byte[]> internalClassBytes = new HashMap<>();
 
     private List<FallenPatchEntry> sortedPatchEntries;
-    private Map<FallenConfig, ResourceContainer> configContainers;
+    private Map<FallenConfig, Resource> configs;
     private Map<String, byte[]> classBytesView;
 
     public List<FallenPatchEntry> patchEntries() {
@@ -25,11 +26,11 @@ public class ScanContext implements IScanContext {
         return sortedPatchEntries;
     }
 
-    public Map<FallenConfig, ResourceContainer> configContainers() {
-        if (configContainers == null) {
-            configContainers = Collections.unmodifiableMap(internalConfigContainers);
+    public Map<FallenConfig, Resource> configs() {
+        if (configs == null) {
+            configs = Collections.unmodifiableMap(internalConfigs);
         }
-        return configContainers;
+        return configs;
     }
 
     public Map<String, byte[]> getClassBytesView() {

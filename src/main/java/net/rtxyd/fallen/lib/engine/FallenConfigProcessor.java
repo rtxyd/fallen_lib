@@ -30,10 +30,9 @@ class FallenConfigProcessor implements ResourceProcessor {
             } else if (!cfg.isRequired()) {
                 return;
             }
-            ctx.internalConfigContainers.put(cfg, r.container());
+            ctx.internalConfigs.put(cfg, r);
         } catch (Exception e) {
             ResourceScanEngine.LOGGER.error("Failed reading fallen config: {}", r.path());
         }
     }
-
 }

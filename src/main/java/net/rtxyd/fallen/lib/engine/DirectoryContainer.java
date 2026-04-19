@@ -14,13 +14,18 @@ class DirectoryContainer implements ResourceContainer {
     }
 
     @Override
-    public String id() {
+    public String getName() {
         return root.getName();
     }
 
     @Override
     public Optional<File> asFile() {
         return Optional.of(root);
+    }
+
+    @Override
+    public boolean isDirectory() {
+        return true;
     }
 
     @Override
