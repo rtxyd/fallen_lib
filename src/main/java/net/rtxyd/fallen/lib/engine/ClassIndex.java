@@ -6,8 +6,8 @@ public class ClassIndex {
 
     private final Map<String, ClassInfo> classHierarchy = new HashMap<>();
 
-    void add(String name, ClassInfo info) {
-        classHierarchy.put(name, info);
+    String add(String name, ClassInfo info) {
+        return classHierarchy.put(name, info) == null ? null : name;
     }
 
     public boolean contains(String className) {
