@@ -23,4 +23,9 @@ record JarResource(
     public InputStream open() throws IOException {
         return jar.getInputStream(entry);
     }
+
+    @Override
+    public boolean isHandledByOuterStream() {
+        return false;
+    }
 }

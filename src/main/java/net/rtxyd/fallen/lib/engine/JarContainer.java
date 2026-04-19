@@ -13,13 +13,18 @@ class JarContainer implements ResourceContainer {
     }
 
     @Override
-    public String id() {
+    public String getName() {
         return jar.getName();
     }
 
     @Override
     public Optional<File> asFile() {
         return Optional.of(jar);
+    }
+
+    @Override
+    public boolean isDirectory() {
+        return false;
     }
 
     @Override
