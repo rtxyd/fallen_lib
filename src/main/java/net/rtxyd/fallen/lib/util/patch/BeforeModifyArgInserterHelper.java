@@ -145,33 +145,33 @@ public final class BeforeModifyArgInserterHelper extends AbstractInserterHelper 
         ignoreReceiver = true;
         switch (targetOp) {
             case Opcodes.INVOKEINTERFACE -> {
-                contextFlags |= InserterContext.F_INVOKEINTERFACE;
+                contextFlags |= NInserterContext.F_INVOKEINTERFACE;
                 ignoreReceiver = false;
             }
             case Opcodes.INVOKEVIRTUAL -> {
-                contextFlags |= InserterContext.F_INVOKEVIRTUAL;
+                contextFlags |= NInserterContext.F_INVOKEVIRTUAL;
                 ignoreReceiver = false;
             }
             case Opcodes.INVOKESTATIC -> {
-                contextFlags |= InserterContext.F_INVOKESTATIC;
+                contextFlags |= NInserterContext.F_INVOKESTATIC;
             }
             case Opcodes.INVOKEDYNAMIC -> {
-                contextFlags |= InserterContext.F_INVOKEDYNAMIC;
+                contextFlags |= NInserterContext.F_INVOKEDYNAMIC;
             }
             case Opcodes.INVOKESPECIAL -> {
-                contextFlags |= InserterContext.F_INVOKESPECIAL;
+                contextFlags |= NInserterContext.F_INVOKESPECIAL;
             }
         }
 
         if (callReturnPrimitive) {
-            contextFlags |= InserterContext.F_RET_PRIMITIVE;
+            contextFlags |= NInserterContext.F_RET_PRIMITIVE;
         }
         if (callReturnVoid) {
-            contextFlags |= InserterContext.F_RET_VOID;
+            contextFlags |= NInserterContext.F_RET_VOID;
         }
 
         if (ignoreReceiver) {
-            contextFlags |= InserterContext.F_INSTANCE;
+            contextFlags |= NInserterContext.F_INSTANCE;
         }
 
         // these two are related to hook
@@ -179,7 +179,7 @@ public final class BeforeModifyArgInserterHelper extends AbstractInserterHelper 
             replaceReturn = false;
         }
         if (replaceReturn) {
-            contextFlags |= InserterContext.F_REPLACE_RET;
+            contextFlags |= NInserterContext.F_REPLACE_RET;
         }
     }
 
