@@ -53,7 +53,9 @@ public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM extends I
 
     static <A extends ICodecProvider<A>, B extends AbstractRegistryBoundPacketPayload.IBegin<C>, C extends AbstractRegistryBoundPacketPayload<A>, D extends AbstractRegistryBoundPacketPayload.IEnd<C>>
     void boundRegistrySingleton(Class<? extends AbstractRegistryBoundPacketPayload<A>> packetClass, AbstractPacketBoundRegistry<A, B, C ,D> instance) {
-        REGISTRY_SINGLETONS.computeIfAbsent(packetClass, k -> instance);
+        if (REGISTRY_SINGLETONS.putIfAbsent(packetClass, instance) != null) {
+            throw new UnsupportedOperationException("Payload " + packetClass.getName() + " is already bound to a registry singleton!");
+        }
     }
 
     @SuppressWarnings("unchecked")

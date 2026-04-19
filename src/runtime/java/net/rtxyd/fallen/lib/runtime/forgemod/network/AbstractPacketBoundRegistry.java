@@ -68,12 +68,20 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
         this.doSync = doSync;
         this.locFilter = locFilter;
         this.useTypeIdAsKey = useTypeIdAsKey;
-        initSingletonBoundCodec();
+        this.initSingletonBoundCodec();
+        this.registerBuiltinCodecs();
     }
 
     final void initPacketsConstructors(Constructors3<REGISTRY_ITEM, BEGIN, PROCESS, END> constructors) {
         if (this.packetConstructors == null) {
+            this.validateConstructors(constructors);
             this.packetConstructors = constructors;
+        }
+    }
+
+    private final void validateConstructors(Constructors3<REGISTRY_ITEM, BEGIN, PROCESS, END> constructors) {
+        if (!(constructors.beginConstructor() != null && constructors.processConstructor() != null && constructors.endConstructor() != null)) {
+            throw new RuntimeException("Registry[" + this.getClass() + "]: Invalid packet constructors!");
         }
     }
 
@@ -115,9 +123,9 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
                         if (useTypeIdAsKey) {
                             Optional<JsonElement> id = JsonOps.INSTANCE.get(obj, type).resultOrPartial(str -> {});
                             Optional<ResourceLocation> keyTypeId = id.map(t -> ResourceLocation.CODEC.decode(JsonOps.INSTANCE, t).resultOrPartial(logger::error).get().getFirst());
-                            this.registry.put(keyTypeId.get(), deserialized);
+                            this.register(keyTypeId.get(), deserialized);
                         } else {
-                            this.registry.put(key, deserialized);
+                            this.register(key, deserialized);
                         }
                     }
                 }
@@ -129,10 +137,15 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
         this.onReload();
     }
 
+    private final void register(ResourceLocation loc, REGISTRY_ITEM item) {
+        if (this.registry.containsKey(loc)) throw new UnsupportedOperationException("Duplicated id: [" + loc + "]");
+        registerTempEntry(loc, item);
+        this.registry.put(loc, item);
+    }
+
     public boolean validate() {
         if (this.packetConstructors == null && this.doSync) {
-            logger.error("Registry [{}] is intended to do sync, but bound constructors are not initialized", path);
-            return false;
+            throw new UnsupportedOperationException("Registry [" + this.getClass() +  "] is intended to do sync, but bound constructors are not initialized!");
         }
         return true;
     }
@@ -194,6 +207,9 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
     // serverside
     @Override
     public final void syncClient(OnDatapackSyncEvent e) {
+        if (packetConstructors == null) {
+            throw new UnsupportedOperationException("Registry[" + this.getClass() + "] packet constructors are not initialized!");
+        }
         ServerPlayer player = e.getPlayer();
         PacketDistributor.PacketTarget target = player == null ? PacketDistributor.ALL.noArg() : PacketDistributor.PLAYER.with(() -> player);
         Connection.sendToTarget(target, packetConstructors.beginConstructor().get());
@@ -220,7 +236,6 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
 
     @Override
     public final void registerTempEntry(ResourceLocation loc, REGISTRY_ITEM item) {
-        if (this.registry.containsKey(loc)) throw new UnsupportedOperationException("Duplicated id: [" + loc + "]");
         this.validateItem(loc, item);
         this.temp.put(loc, item);
     }
