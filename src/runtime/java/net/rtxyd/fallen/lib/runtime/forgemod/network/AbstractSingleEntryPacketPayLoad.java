@@ -10,32 +10,32 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-public abstract class AbstractSingleEntryPacketPayLoad<ENTRY> implements IVanillaLikeCustomPacketPayload{
-    private final ENTRY entry;
+public abstract class AbstractSingleEntryPacketPayLoad<E> implements IVanillaLikeCustomPacketPayload{
+    private final E entry;
 
-    protected AbstractSingleEntryPacketPayLoad(ENTRY entry) {
+    protected AbstractSingleEntryPacketPayLoad(E entry) {
         this.entry = entry;
     }
 
-    public final ENTRY getEntry() {
+    public final E getEntry() {
         return entry;
     }
 
-    protected abstract Codec<ENTRY> getBoundEntryCodec();
+    protected abstract Codec<E> getBoundEntryCodec();
 
-    public static <ORIGIN extends AbstractSingleEntryPacketPayLoad<ENTRY>, ENTRY> FriendlyByteBufCodec<ORIGIN> createByteBufCodec(
-            Codec<ENTRY> entryCodec,
-            Function<ENTRY, ORIGIN> constructor
+    public static <P extends AbstractSingleEntryPacketPayLoad<E>, E> FriendlyByteBufCodec<P> createByteBufCodec(
+            Codec<E> entryCodec,
+            Function<E, P> constructor
     ) {
         return new FriendlyByteBufCodec<>() {
             @Override
-            public void encode(@NotNull ORIGIN value, @NotNull FriendlyByteBuf buf) {
+            public void encode(@NotNull P value, @NotNull FriendlyByteBuf buf) {
                 buf.writeNbt((CompoundTag) entryCodec.encodeStart(NbtOps.INSTANCE, value.getEntry())
                         .getOrThrow(false,s -> FallenLib.LOGGER.error("Failed parsing item for {}", value.getEntry())));
             }
 
             @Override
-            public @NotNull ORIGIN decode(@NotNull FriendlyByteBuf buf) {
+            public @NotNull P decode(@NotNull FriendlyByteBuf buf) {
                 CompoundTag tag = buf.readNbt();
                 var result = entryCodec.decode(NbtOps.INSTANCE, tag)
                         .getOrThrow(false,s -> FallenLib.LOGGER.error("Failed parsing received payload for {}", this.getClass().getName())).getFirst();

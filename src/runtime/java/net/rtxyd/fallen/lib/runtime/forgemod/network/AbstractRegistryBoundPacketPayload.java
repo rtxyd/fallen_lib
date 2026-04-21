@@ -16,18 +16,18 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>> implements IVanillaLikeCustomPacketPayload {
+public abstract class AbstractRegistryBoundPacketPayload<E extends ICodecProvider<E>> implements IVanillaLikeCustomPacketPayload {
     private final ResourceLocation path;
-    private final REGISTRY_ITEM registryItem;
+    private final E registryItem;
     @SuppressWarnings("rawtypes")
     private static final Map<Class<? extends AbstractRegistryBoundPacketPayload>, AbstractPacketBoundRegistry> REGISTRY_SINGLETONS = new HashMap<>();
 
-    protected AbstractRegistryBoundPacketPayload(ResourceLocation path, REGISTRY_ITEM registryItem) {
+    protected AbstractRegistryBoundPacketPayload(ResourceLocation path, E registryItem) {
         this.path = path;
         this.registryItem = registryItem;
     }
 
-    protected Codec<REGISTRY_ITEM> getBoundItemCodec() {
+    protected Codec<E> getBoundItemCodec() {
         var registry = getBoundRegistry(this.getClassAuto());
         if (registry == null) {
             throw new RuntimeException(String.format("Packet [%s] registry is not bound!", this.getClass()));
@@ -38,7 +38,7 @@ public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM extends I
     public final ResourceLocation getPath() {
         return path;
     }
-    public final REGISTRY_ITEM getItem() {
+    public final E getItem() {
         return registryItem;
     }
 
@@ -47,8 +47,8 @@ public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM extends I
     }
 
     @SuppressWarnings("unchecked")
-    public final Class<? extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>> getClassAuto() {
-        return (Class<? extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>>) this.getClass();
+    public final Class<? extends AbstractRegistryBoundPacketPayload<E>> getClassAuto() {
+        return (Class<? extends AbstractRegistryBoundPacketPayload<E>>) this.getClass();
     }
 
     static <A extends ICodecProvider<A>, B extends AbstractRegistryBoundPacketPayload.IBegin<C>, C extends AbstractRegistryBoundPacketPayload<A>, D extends AbstractRegistryBoundPacketPayload.IEnd<C>>
@@ -64,10 +64,10 @@ public abstract class AbstractRegistryBoundPacketPayload<REGISTRY_ITEM extends I
         return (AbstractPacketBoundRegistry<A, B, C, D>) REGISTRY_SINGLETONS.get(registryClass);
     }
 
-    public static <ORIGIN extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>, REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>> FriendlyByteBufCodec<ORIGIN> createByteBufCodec(
+    public static <ORIGIN extends AbstractRegistryBoundPacketPayload<E>, E extends ICodecProvider<E>> FriendlyByteBufCodec<ORIGIN> createByteBufCodec(
             Logger logger,
-            Codec<REGISTRY_ITEM> itemCodec,
-            BiFunction<ResourceLocation, REGISTRY_ITEM , ORIGIN> constructor
+            Codec<E> itemCodec,
+            BiFunction<ResourceLocation, E , ORIGIN> constructor
     ) {
         return new FriendlyByteBufCodec<>() {
             @Override

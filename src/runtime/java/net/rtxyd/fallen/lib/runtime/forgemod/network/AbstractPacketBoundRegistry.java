@@ -35,11 +35,11 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>,
-        BEGIN extends AbstractRegistryBoundPacketPayload.IBegin<PROCESS>,
-        PROCESS extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>,
-        END extends AbstractRegistryBoundPacketPayload.IEnd<PROCESS>>
-        extends SimpleJsonResourceReloadListener implements IPacketBoundRegistry<REGISTRY_ITEM>, ICodecProvider<REGISTRY_ITEM> {
+public abstract class AbstractPacketBoundRegistry<E extends ICodecProvider<E>,
+        PB extends AbstractRegistryBoundPacketPayload.IBegin<P>,
+        P extends AbstractRegistryBoundPacketPayload<E>,
+        PE extends AbstractRegistryBoundPacketPayload.IEnd<P>>
+        extends SimpleJsonResourceReloadListener implements IPacketBoundRegistry<E>, ICodecProvider<E> {
 
     protected final String path;
     private final Logger logger;
@@ -49,16 +49,16 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
     protected final boolean doSync;
     protected final boolean useTypeIdAsKey;
 
-    protected BiMap<ResourceLocation, REGISTRY_ITEM> registry = ImmutableBiMap.of();
+    protected BiMap<ResourceLocation, E> registry = ImmutableBiMap.of();
     @SuppressWarnings("rawtypes")
     private static final Map<Class<? extends AbstractPacketBoundRegistry>, AbstractPacketBoundRegistry> SINGLETONS = new HashMap<>();
 
-    private final BiMap<ResourceLocation, Codec<? extends REGISTRY_ITEM>> CODEC_MAP = HashBiMap.create();
-    private Codec<REGISTRY_ITEM> fallbackCodec = null;
+    private final BiMap<ResourceLocation, Codec<? extends E>> CODEC_MAP = HashBiMap.create();
+    private Codec<E> fallbackCodec = null;
 
-    protected final Map<ResourceLocation, REGISTRY_ITEM> temp = new HashMap<>();
-    Constructors3<REGISTRY_ITEM, BEGIN, PROCESS, END> packetConstructors;
-    private Codec<REGISTRY_ITEM> singletonBoundCodec;
+    protected final Map<ResourceLocation, E> temp = new HashMap<>();
+    Constructors3<E, PB, P, PE> packetConstructors;
+    private Codec<E> singletonBoundCodec;
 
     public AbstractPacketBoundRegistry(Logger logger, String path, String type, Predicate<ResourceLocation> locFilter, boolean doSync, boolean useTypeIdAsKey) {
         super(new Gson(), path);
@@ -72,14 +72,14 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
         this.registerBuiltinCodecs();
     }
 
-    final void initPacketsConstructors(Constructors3<REGISTRY_ITEM, BEGIN, PROCESS, END> constructors) {
+    final void initPacketsConstructors(Constructors3<E, PB, P, PE> constructors) {
         if (this.packetConstructors == null) {
             this.validateConstructors(constructors);
             this.packetConstructors = constructors;
         }
     }
 
-    private final void validateConstructors(Constructors3<REGISTRY_ITEM, BEGIN, PROCESS, END> constructors) {
+    private final void validateConstructors(Constructors3<E, PB, P, PE> constructors) {
         if (!(constructors.beginConstructor() != null && constructors.processConstructor() != null && constructors.endConstructor() != null)) {
             throw new RuntimeException("Registry[" + this.getClass() + "]: Invalid packet constructors!");
         }
@@ -107,7 +107,7 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
             return;
         }
         this.beginReload();
-        Codec<REGISTRY_ITEM> codec = (Codec<REGISTRY_ITEM>) SINGLETONS.get(this.getClass()).getCodec();
+        Codec<E> codec = (Codec<E>) SINGLETONS.get(this.getClass()).getCodec();
         if (codec == null) {
             logger.error("Codec is null or not registered in {}", path);
             return;
@@ -119,7 +119,7 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
                 if (Serialization.isNotNullOrIsJsonObj(ele, key, this.path, this.logger)) {
                     obj = ele.getAsJsonObject();
                     if (Serialization.checkEmptyJsonObjAndLog(obj, key, this.path, this.logger) && Serialization.checkConditions(obj, key, this.path, this.logger, this.context)) {
-                        REGISTRY_ITEM deserialized = codec.decode(JsonOps.INSTANCE, obj).getOrThrow(false, s -> {}).getFirst();
+                        E deserialized = codec.decode(JsonOps.INSTANCE, obj).getOrThrow(false, s -> {}).getFirst();
                         if (useTypeIdAsKey) {
                             Optional<JsonElement> id = JsonOps.INSTANCE.get(obj, type).resultOrPartial(str -> {});
                             Optional<ResourceLocation> keyTypeId = id.map(t -> ResourceLocation.CODEC.decode(JsonOps.INSTANCE, t).resultOrPartial(logger::error).get().getFirst());
@@ -137,7 +137,7 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
         this.onReload();
     }
 
-    private final void register(ResourceLocation loc, REGISTRY_ITEM item) {
+    private final void register(ResourceLocation loc, E item) {
         if (this.registry.containsKey(loc)) throw new UnsupportedOperationException("Duplicated id: [" + loc + "]");
         registerTempEntry(loc, item);
         this.registry.put(loc, item);
@@ -161,17 +161,17 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
         SINGLETONS.computeIfAbsent(instance.getClass(), k -> instance);
     }
 
-    public final void registerCodec(ResourceLocation loc, Codec<? extends REGISTRY_ITEM> codec) {
+    public final void registerCodec(ResourceLocation loc, Codec<? extends E> codec) {
         CODEC_MAP.put(loc, codec);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     // placebo way codec
-    final Codec<REGISTRY_ITEM> initSingletonBoundCodec() {
+    final Codec<E> initSingletonBoundCodec() {
         if (this.singletonBoundCodec == null) {
             this.singletonBoundCodec = new Codec<>() {
                 @Override
-                public <T> DataResult<Pair<REGISTRY_ITEM, T>> decode(DynamicOps<T> ops, T input) {
+                public <T> DataResult<Pair<E, T>> decode(DynamicOps<T> ops, T input) {
                     Optional<T> id = ops.get(input, type).resultOrPartial(str -> {});
                     Optional<ResourceLocation> key = id.map(t -> ResourceLocation.CODEC.decode(ops, t).resultOrPartial(logger::error).get().getFirst());
 
@@ -184,8 +184,8 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
                 }
 
                 @Override
-                public <T> DataResult<T> encode(REGISTRY_ITEM input, DynamicOps<T> ops, T prefix) {
-                    Codec<REGISTRY_ITEM> codec = (Codec<REGISTRY_ITEM>) input.getCodec();
+                public <T> DataResult<T> encode(E input, DynamicOps<T> ops, T prefix) {
+                    Codec<E> codec = (Codec<E>) input.getCodec();
                     ResourceLocation key = CODEC_MAP.inverse().get(codec);
                     if (key == null) {
                         return DataResult.error(() -> "Codec is not registered! Obj:" + input);
@@ -200,7 +200,7 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
     }
 
     protected abstract void registerBuiltinCodecs();
-    protected final void registerFallbackCodec(Codec<REGISTRY_ITEM> fallback) {
+    protected final void registerFallbackCodec(Codec<E> fallback) {
         this.fallbackCodec = fallback;
     }
 
@@ -235,13 +235,13 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
     }
 
     @Override
-    public final void registerTempEntry(ResourceLocation loc, REGISTRY_ITEM item) {
+    public final void registerTempEntry(ResourceLocation loc, E item) {
         this.validateItem(loc, item);
         this.temp.put(loc, item);
     }
 
     @Override
-    public void validateItem(ResourceLocation loc, REGISTRY_ITEM item) {}
+    public void validateItem(ResourceLocation loc, E item) {}
 
     @Override
     public final void handleBegin(Supplier<NetworkEvent.Context> contextSupplier) {
@@ -249,7 +249,7 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
     }
 
     @Override
-    public final void handleProcess(Supplier<NetworkEvent.Context> contextSupplier, ResourceLocation path, REGISTRY_ITEM item) {
+    public final void handleProcess(Supplier<NetworkEvent.Context> contextSupplier, ResourceLocation path, E item) {
         contextSupplier.get().enqueueWork(() -> {
             this.registerTempEntry(path, item);
         });
@@ -273,11 +273,11 @@ public abstract class AbstractPacketBoundRegistry<REGISTRY_ITEM extends ICodecPr
     }
 
     @Override
-    public final Codec<REGISTRY_ITEM> getCodec() {
+    public final Codec<E> getCodec() {
         return this.singletonBoundCodec;
     }
 
-    public final Codec<REGISTRY_ITEM> getFallbackCodec() {
+    public final Codec<E> getFallbackCodec() {
         return this.fallbackCodec;
     }
 }
