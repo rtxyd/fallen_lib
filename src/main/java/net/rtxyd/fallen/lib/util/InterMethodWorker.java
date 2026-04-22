@@ -19,13 +19,21 @@ public class InterMethodWorker implements ISingleUseAsyncWorker {
     }
 
     @Override
-    public void addTask(String name, Callable<?> call) throws InterruptedException {
-        EXECUTOR.submit(name, call);
+    public void addTask(String name, Callable<?> call) {
+        try {
+            EXECUTOR.submit(name, call);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
-    public void addTaskExpire(String name, Callable<?> call, IExpirationCheck checkExpire) throws InterruptedException {
-        EXECUTOR.submitExpire(name, call, checkExpire);
+    public void addTaskExpire(String name, Callable<?> call, IExpirationCheck checkExpire) {
+        try {
+            EXECUTOR.submitExpire(name, call, checkExpire);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**

@@ -2,12 +2,15 @@ package net.rtxyd.fallen.lib;
 
 import net.minecraftforge.fml.common.Mod;
 import net.rtxyd.fallen.lib.config.BuildInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(FallenCoreLib.FORGE_MODID)
 public class FallenCoreLib
 {
     // Define mod id in a common place for everything to reference
+    public static final Logger LOGGER = LoggerFactory.getLogger("fallen.core");
     public static final String FORGE_MODID = "fallen_lib";
     public static final String FORGE_FILE_NAME = "fallen_lib" + "-" + BuildInfo.VERSION + "-" + "runtime" + ".jar";
     public static final String IN_ONE_FILE = "fallen_lib" + "-" + BuildInfo.VERSION + ".jar";

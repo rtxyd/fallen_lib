@@ -1,5 +1,6 @@
 package net.rtxyd.fallen.lib.util;
 
+import net.rtxyd.fallen.lib.FallenCoreLib;
 import net.rtxyd.fallen.lib.util.patch.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -17,7 +18,6 @@ import java.util.Set;
 import java.util.function.*;
 
 public class PatchUtil {
-    static final Logger LOGGER = LoggerFactory.getLogger("fallen.util");
     public static final String STANDARD_METHOD = "public static Object hook(IInserterContext<Object, Object> ctx, Object... args)";
 
     public static ClassNode cloneClassNode(ClassNode original) {
@@ -254,14 +254,14 @@ public class PatchUtil {
 
     private static boolean checkDesc(MethodInsnNode hookMethod, InserterType type) {
         if (!hookMethod.desc.startsWith(InserterType.standardStarter())) {
-            LOGGER.debug("Inserter {} is not standard form! Expect: (descriptor)\n {}", hookMethod.owner + "." + hookMethod.name + hookMethod.desc, type.getExpected());
+            FallenCoreLib.LOGGER.debug("Inserter {} is not standard form! Expect: (descriptor)\n {}", hookMethod.owner + "." + hookMethod.name + hookMethod.desc, type.getExpected());
             return false;
         }
         return true;
     }
     private static boolean checkOpcode(MethodInsnNode hookMethod) {
         if (hookMethod.getOpcode() != Opcodes.INVOKESTATIC) {
-            LOGGER.debug("Inserter {} is not standard form! Expect: (static)\n", hookMethod.owner + "." + hookMethod.name + hookMethod.desc);
+            FallenCoreLib.LOGGER.debug("Inserter {} is not standard form! Expect: (static)\n", hookMethod.owner + "." + hookMethod.name + hookMethod.desc);
             return false;
         }
         return true;
@@ -294,7 +294,7 @@ public class PatchUtil {
         MethodInsnNode hookMethod = methodData.getInserterMethod();
         boolean shouldCheck = methodNode.name.equals("<init>");
         if (!hookMethod.desc.startsWith(InserterType.standardStarter())) {
-            LOGGER.debug("Inserter {} is not standard form! Expect: \n {}", hookMethod.owner + "." + hookMethod.name, InserterType.Expected.EXPECTED_STANDARD);
+            FallenCoreLib.LOGGER.debug("Inserter {} is not standard form! Expect: \n {}", hookMethod.owner + "." + hookMethod.name, InserterType.Expected.EXPECTED_STANDARD);
             return;
         }
         if (!checkOpcode(hookMethod)) return;

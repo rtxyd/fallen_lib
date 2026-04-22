@@ -1,6 +1,6 @@
 package net.rtxyd.fallen.lib.util.thread;
 
-import net.rtxyd.fallen.lib.util.IThrowableSupplier;
+import net.rtxyd.fallen.lib.FallenCoreLib;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,11 @@ public class InterMethodExecutor {
                     Task<?> task = taskQueue.take();
                     executeTask(task);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    if (!running) {
+                        break;
+                    }
+                } catch (Throwable e) {
+                    FallenCoreLib.LOGGER.debug("Unexpected worker exception: ", e);
                     if (!running) {
                         break;
                     }
@@ -50,7 +54,11 @@ public class InterMethodExecutor {
 
                     guardQueue.waitA(50);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    if (!running) {
+                        break;
+                    }
+                } catch (Throwable e) {
+                    FallenCoreLib.LOGGER.debug("Unexpected worker exception: ", e);
                     if (!running) {
                         break;
                     }
