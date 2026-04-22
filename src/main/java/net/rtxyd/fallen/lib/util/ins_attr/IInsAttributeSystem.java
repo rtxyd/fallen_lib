@@ -2,11 +2,15 @@ package net.rtxyd.fallen.lib.util.ins_attr;
 
 import java.util.Map;
 
-public interface IInsAttributeSystem<CLASSIFIER, INSTANCE, ATTRIBUTE extends AInsAttribute<INSTANCE>> {
+public interface IInsAttributeSystem<K, I, A extends AInsAttribute<I>> {
 
-    Map<CLASSIFIER, ATTRIBUTE> getAttributes();
+    Map<K, A> getAttributes();
 
-    Map<CLASSIFIER, INSTANCE> getInput();
+    void addModifier(K key, InsAttributeModifier modifier);
 
-    Map<CLASSIFIER, INSTANCE> output();
+    InsAttributeModifier removeModifier(K key, String name);
+
+    Map<K, I> getInput();
+
+    Map<K, I> output();
 }
