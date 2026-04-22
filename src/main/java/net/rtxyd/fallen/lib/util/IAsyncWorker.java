@@ -12,9 +12,9 @@ public interface IAsyncWorker {
 
     <T> T getResultOrThrow(String id);
 
-    void addTask(String id, Callable<?> call) throws InterruptedException;
+    void addTask(String id, Callable<?> call);
 
-    void addTaskExpire(String id, Callable<?> call, IExpirationCheck checkExpire) throws InterruptedException;
+    void addTaskExpire(String id, Callable<?> call, IExpirationCheck checkExpire);
 
     void shutDown();
 }

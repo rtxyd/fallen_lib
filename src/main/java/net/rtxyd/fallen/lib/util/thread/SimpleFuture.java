@@ -2,6 +2,8 @@ package net.rtxyd.fallen.lib.util.thread;
 
 import net.rtxyd.fallen.lib.util.IThrowableSupplier;
 
+import java.util.concurrent.CancellationException;
+
 public class SimpleFuture<T> implements IThrowableSupplier<T> {
     private T result;
     private boolean ready = false;
@@ -23,11 +25,11 @@ public class SimpleFuture<T> implements IThrowableSupplier<T> {
     }
 
     // block
-    public synchronized T get() throws InterruptedException, Exception {
+    public synchronized T get() throws CancellationException, Exception {
         while (!ready && !cancelled) {
             wait();
         }
-        if (cancelled) throw new InterruptedException("Task cancelled");
+        if (cancelled) throw new CancellationException("Task cancelled");
         if (exception != null) throw exception;
         return result;
     }
