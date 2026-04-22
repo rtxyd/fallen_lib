@@ -1,39 +1,31 @@
 package net.rtxyd.fallen.lib.util.ins_attr;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AFactorInsAttributeSystem<K, I, A extends AInsAttribute<I>, F> implements IInsAttributeSystem<K, I, A> {
+public abstract class ADefaultInsAttributeSystem<K, I, A extends AInsAttribute<I>> implements IInsAttributeSystem<K, I, A> {
 
-    private final Map<K, I> instances;
-    private final F factor;
-    private final Map<K, A> attributes;
+    protected final Map<K, I> instances;
+    protected final Map<K, A> attributes;
 
-    public AFactorInsAttributeSystem(Map<K, I> instances, F factor) {
+    protected ADefaultInsAttributeSystem(Map<K, I> instances) {
         this.instances = instances;
-        this.factor = factor;
-        this.attributes = Collections.unmodifiableMap(buildAttributes());
+        this.attributes = new HashMap<>();
+        ensureInit();
+    }
+
+    protected void ensureInit() {
+        if (attributes.isEmpty()) {
+            instances.forEach((k, i) -> {
+                attributes.put(k, createAttributeWith(i));
+            });
+        }
     }
 
     @Override
     public final Map<K, A> getAttributes() {
         return attributes;
     }
-
-    public final F getFactor() {
-        return factor;
-    }
-
-    private Map<K, A> buildAttributes() {
-        Map<K, A> attrs = new HashMap<>(instances.size());
-        for (Map.Entry<K, I> en : instances.entrySet()) {
-            K k = en.getKey();
-            attrs.put(k, parse(k, en.getValue()));
-        }
-        return attrs;
-    }
-
 
     @Override
     public void addModifier(K key, InsAttributeModifier modifier) {
@@ -53,7 +45,18 @@ public abstract class AFactorInsAttributeSystem<K, I, A extends AInsAttribute<I>
         return null;
     }
 
-    public abstract A parse(K k, I v);
+
+    public ADefaultInsAttributeSystem<K,I,A> updateWith(Map<K, I> instances) {
+        attributes.keySet().retainAll(instances.keySet());
+        instances.forEach((k,v) -> {
+            if (!attributes.containsKey(k)) {
+                attributes.put(k, createAttributeWith(v));
+            }
+        });
+        return this;
+    }
+
+    public abstract A createAttributeWith(I instance);
 
     public abstract I createInsWith(I old, float value);
 

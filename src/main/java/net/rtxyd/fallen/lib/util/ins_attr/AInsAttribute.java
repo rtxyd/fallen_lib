@@ -1,14 +1,12 @@
 package net.rtxyd.fallen.lib.util.ins_attr;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-public abstract class AInsAttribute<INSTANCE> {
-    private final INSTANCE instance;
-    private Map<String, AInsAttributeModifier> modifiers;
+public abstract class AInsAttribute<I> {
+    private final I instance;
+    private Map<String, InsAttributeModifier> modifiers;
     protected float initBase;
     protected float initFinal;
     private float multiplyBase;
@@ -18,7 +16,7 @@ public abstract class AInsAttribute<INSTANCE> {
     private float addFinal;
     private float setFinal;
 
-    public AInsAttribute(INSTANCE instance, Map<String, AInsAttributeModifier> modifiers, float initBase, float initFinal) {
+    public AInsAttribute(I instance, Map<String, InsAttributeModifier> modifiers, float initBase, float initFinal) {
         this.instance = instance;
         this.modifiers = modifiers;
         this.initBase = initBase;
@@ -41,17 +39,21 @@ public abstract class AInsAttribute<INSTANCE> {
         clearModifier();
     }
 
-    public final void addModifier(String name, AInsAttributeModifier modifier) {
+    public final void addModifier(String name, InsAttributeModifier modifier) {
         modifiers.put(name, modifier);
     }
 
-    public final void removeModifier(String name) {modifiers.remove(name);}
+    public final InsAttributeModifier removeModifier(String name) {return modifiers.remove(name);}
+
+    public final Map<String, InsAttributeModifier> getModifiers() {
+        return modifiers;
+    }
 
     protected final void clearModifier() {
         modifiers = new HashMap<>();
     }
 
-    protected final void calc(AInsAttributeModifier modifier) {
+    protected final void calc(InsAttributeModifier modifier) {
         float value = modifier.getValue();
         switch (modifier.getType()) {
             case MULTIPLY_BASE -> {
@@ -72,10 +74,14 @@ public abstract class AInsAttribute<INSTANCE> {
             case SET_FINAL -> {
                 this.calcSetFinal(value);
             }
+            case NONE -> {}
+            default -> {
+                throw new UnsupportedOperationException("Attempt to add null modifier!");
+            }
         }
     }
 
-    public INSTANCE output(BiFunction<INSTANCE, Float, INSTANCE> function) {
+    public I output(BiFunction<I, Float, I> function) {
         modifiers.values().forEach(this::calc);
         computeFinal();
         return function.apply(instance, setFinal);
