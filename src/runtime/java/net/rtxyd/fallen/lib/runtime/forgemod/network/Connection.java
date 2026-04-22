@@ -40,15 +40,15 @@ public class Connection {
                 ClientBoundSyncExtraGemBonusesPacket.End.class,     ClientBoundSyncExtraGemBonusesPacket.End::new,      ClientBoundSyncExtraGemBonusesPacket.End::handle);
     }
 
-    public static <REGISTRY_ITEM extends ICodecProvider<REGISTRY_ITEM>,
-            BEGIN extends AbstractRegistryBoundPacketPayload.IBegin<PROCESS>,
-            PROCESS extends AbstractRegistryBoundPacketPayload<REGISTRY_ITEM>,
-            END extends AbstractRegistryBoundPacketPayload.IEnd<PROCESS>,
-            REGISTRY extends AbstractPacketBoundRegistry<REGISTRY_ITEM, BEGIN, PROCESS, END>>
-    void registerRegistryBoundPacketPayloads(REGISTRY singleton, FriendlyByteBufCodec<PROCESS> codec,
-                                             Class<BEGIN> begin, Supplier<BEGIN> beginConstructor, BiConsumer<BEGIN, Supplier<NetworkEvent.Context>> beginHandler,
-                                             Class<PROCESS> process, BiFunction<ResourceLocation, REGISTRY_ITEM, PROCESS> processConstructor, BiConsumer<PROCESS, Supplier<NetworkEvent.Context>> processHandler,
-                                             Class<END> end, Supplier<END> endConstructor, BiConsumer<END, Supplier<NetworkEvent.Context>> endHandler) {
+    public static <I extends ICodecProvider<I>,
+            PB extends AbstractRegistryBoundPacketPayload.IBegin<P>,
+            P extends AbstractRegistryBoundPacketPayload<I>,
+            PE extends AbstractRegistryBoundPacketPayload.IEnd<P>,
+            R extends AbstractPacketBoundRegistry<I, PB, P, PE>>
+    void registerRegistryBoundPacketPayloads(R singleton, FriendlyByteBufCodec<P> codec,
+                                             Class<PB> begin, Supplier<PB> beginConstructor, BiConsumer<PB, Supplier<NetworkEvent.Context>> beginHandler,
+                                             Class<P> process, BiFunction<ResourceLocation, I, P> processConstructor, BiConsumer<P, Supplier<NetworkEvent.Context>> processHandler,
+                                             Class<PE> end, Supplier<PE> endConstructor, BiConsumer<PE, Supplier<NetworkEvent.Context>> endHandler) {
         if (INSTANCE == null) throw new RuntimeException("Fallen Lib Connection is not initialized!");
 
         singleton.registerCommon();
@@ -71,9 +71,9 @@ public class Connection {
         singleton.registerSync();
     }
 
-    public static <ENTRY, PROCESS extends AbstractSingleEntryPacketPayLoad<ENTRY>> void registerSingleEntryPacketPayload(
-            Class<PROCESS> process, NetworkDirection direction,
-            FriendlyByteBufCodec<PROCESS> codec, BiConsumer<PROCESS, Supplier<NetworkEvent.Context>> handler) {
+    public static <I, P extends AbstractSingleEntryPacketPayLoad<I>> void registerSingleEntryPacketPayload(
+            Class<P> process, NetworkDirection direction,
+            FriendlyByteBufCodec<P> codec, BiConsumer<P, Supplier<NetworkEvent.Context>> handler) {
         INSTANCE.messageBuilder(process, id(), direction)
                 .encoder(codec::encode)
                 .decoder(codec::decode)
