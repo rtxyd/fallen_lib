@@ -1,17 +1,41 @@
 # Changelog
 
+## 1.4
+---
+### 1.4.0
+#### Core
+- Rewrite most standard inserter logic.
+- Hide explicit ClassNode into patch context, use getter instead.
+- Introduce `InserterType.BEFORE_MODIFY_ARG`
+- Scanner engine overhaul
+- API changes `IFallenPatch` 
+- Massive bug fixes
+- Refactor PatchUtil methods
+- Refactor `@FallenInserter` annotation
+- `IInsAttributeSystem` add and remove modifier
+- Implement `ISingeUseAsyncWorker`
+
+#### Runtime.forgemod
+- Add unsupported operation checks and fix bugs in `AbstractRegistryBoundPacketPayload` and `AbstractPacketBoundRegistry`
+- Add `PatchAffixHelper` using FallenPatch and Inserter
+- Introduce `AffixApplyEvent`, `AffixCacheRefreshEvent`, `AffixGetFinishedEvent`, `RegisterAffixHasherEvent`
+- Bugs fix `extra_gem_bonus`
+
 ## 1.3
 ---
 ### 1.3.4
-## Runtime.forgemod
-- Crude SyncableRegistry, with network handler (now it's poor version of `DynamicRegistry` in Placebo)
-- Simple 1.21.1 like Connection for network
+#### Core
+- 1.3.3.3 Introduce `IInsAttributeSystem`
+- 1.3.3.3 Introduce `InserterType.BEFORE_MODIFY_ARG`, APi change `IFallenPatch` remove explicit ClassNode from apply method
+#### Runtime.forgemod
+- 1.3.3.1 -> ~~Crude SyncableRegistry, with network handler (now it's poor version of `DynamicRegistry` in Placebo)~~
+- 1.3.3.1 -> Simple 1.21.1 like Connection for network
 - 1.3.3.1/1.3.3.2 -> Implement `AbstractPacketBoundRegistry`, `AbstractRegistryBoundPacketPayload`, `AbstractSingleEntryPacketPayLoad`
 
 ### 1.3.3
-## Core
+#### Core
 - Mod locator tweak
-## Runtime.forgemod
+#### Runtime.forgemod
 - Special check for FGA version compat
 - Attrlib fix port
 - Lootcategory `forItem()` fix
