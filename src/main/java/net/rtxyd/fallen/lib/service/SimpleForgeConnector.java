@@ -5,7 +5,7 @@ import net.minecraftforge.fml.loading.moddiscovery.*;
 import net.minecraftforge.forgespi.locating.IModFile;
 import net.minecraftforge.forgespi.locating.IModLocator;
 import net.minecraftforge.forgespi.locating.ModFileLoadingException;
-import net.rtxyd.fallen.lib.FallenLib;
+import net.rtxyd.fallen.lib.FallenCoreLib;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,7 +21,7 @@ import static net.rtxyd.fallen.lib.service.FallenBootstrap.LOGGER;
 public class SimpleForgeConnector extends AbstractJarFileModProvider implements IModLocator {
 
     public Path getPath() {
-        URL url = this.getClass().getClassLoader().getResource(FallenLib.RUNTIME_MOD_LOC);
+        URL url = this.getClass().getClassLoader().getResource(FallenCoreLib.FORGE_MOD_LOC);
         if (url == null) {
             if (FallenBootstrap.isDevEnvironment) {
                 LOGGER.warn("Run fallen core lib in dev environment without runtime lib.");

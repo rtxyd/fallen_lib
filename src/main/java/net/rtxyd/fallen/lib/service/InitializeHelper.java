@@ -1,7 +1,6 @@
 package net.rtxyd.fallen.lib.service;
 
 import cpw.mods.modlauncher.api.IEnvironment;
-import net.rtxyd.fallen.lib.FallenLib;
 import net.rtxyd.fallen.lib.config.FallenConfig;
 import net.rtxyd.fallen.lib.engine.*;
 import net.rtxyd.fallen.lib.extra.cmerge.SimpleClassMergeEngine;

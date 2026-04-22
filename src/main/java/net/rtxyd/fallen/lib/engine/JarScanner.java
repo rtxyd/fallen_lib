@@ -1,6 +1,6 @@
 package net.rtxyd.fallen.lib.engine;
 
-import net.rtxyd.fallen.lib.FallenLib;
+import net.rtxyd.fallen.lib.FallenCoreLib;
 import net.rtxyd.fallen.lib.type.engine.ResourceConsumer;
 import net.rtxyd.fallen.lib.type.engine.ResourceContainer;
 import net.rtxyd.fallen.lib.type.engine.ResourceScanner;
@@ -48,7 +48,7 @@ public class JarScanner implements ResourceScanner {
             String title = attrs.getValue("Specification-Title");
             // check if it's runtime lib
             if (title == null) return;
-            if (title.equals(FallenLib.SPEC_TITLE_ALL)) {
+            if (title.equals(FallenCoreLib.SPEC_TITLE_ALL)) {
                 scanInnerJar = true;
             }
         }

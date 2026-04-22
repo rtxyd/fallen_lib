@@ -1,6 +1,5 @@
 package net.rtxyd.fallen.lib.engine;
 
-import net.rtxyd.fallen.lib.FallenLib;
 import net.rtxyd.fallen.lib.type.engine.ResourceConsumer;
 import net.rtxyd.fallen.lib.type.engine.ResourceScanner;
 import net.rtxyd.fallen.lib.util.OuterTrackedInputStream;
@@ -35,7 +34,7 @@ public class JarInJarScanner implements ResourceScanner {
 
     @Override
     public void scan(ResourceConsumer consumer) throws IOException {
-//        if (!nestHostFile.getName().equals(FallenLib.MOD_NAME)) return;
+//        if (!nestHostFile.getName().equals(FallenCoreLib.MOD_NAME)) return;
         scanA(consumer);
     }
 
